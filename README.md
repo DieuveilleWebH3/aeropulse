@@ -4,11 +4,11 @@
 
 AeroPulse is an engineering portfolio project demonstrating the design of a production-oriented predictive-maintenance platform with Python, FastAPI, event-driven processing, data engineering, observability, security, testing, and cloud infrastructure.
 
-> Current status: **Sprint 0 — Foundation / CI enabled**
+> Current status: **Sprint 0 — FastAPI runtime bootstrap**
 
 ## Current bootstrap
 
-The repository currently establishes the Python package and engineering-quality foundation. Application runtime dependencies such as FastAPI are intentionally introduced in later tickets.
+The repository now includes the first FastAPI runtime slice with validated settings, application lifespan management, and operational liveness/readiness probes.
 
 ### Prerequisites
 
@@ -39,6 +39,19 @@ Expected:
 
 ```text
 aeropulse
+```
+
+### Run the API
+
+```bash
+uv run --locked uvicorn aeropulse.api.app:create_app --factory --host 127.0.0.1 --port 8000
+```
+
+Operational probes:
+
+```bash
+curl -i http://127.0.0.1:8000/health
+curl -i http://127.0.0.1:8000/ready
 ```
 
 ### Quality checks
@@ -86,6 +99,7 @@ uv build
 - [Python toolchain](docs/engineering/python-toolchain.md)
 - [Code quality and testing](docs/engineering/quality-and-testing.md)
 - [Continuous integration](docs/engineering/continuous-integration.md)
+- [FastAPI application bootstrap](docs/engineering/fastapi-application-bootstrap.md)
 
 ## Foundation roadmap
 
@@ -94,5 +108,5 @@ uv build
 - [x] S0-003 — Python + uv project bootstrap
 - [x] S0-004 — Code quality and test toolchain
 - [x] S0-005 — Minimal GitHub Actions CI
-- [ ] S0-006 — FastAPI application with `/health` and `/ready`
+- [x] S0-006 — FastAPI application with `/health` and `/ready`
 - [ ] S0-007 — Local dependencies and Docker Compose

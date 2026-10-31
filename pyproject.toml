@@ -4,10 +4,16 @@ version = "0.1.0"
 description = "Predictive Maintenance and Fleet Health Monitoring Platform"
 readme = "README.md"
 requires-python = ">=3.14,<3.15"
-dependencies = []
+dependencies = [
+    "fastapi>=0.162.0,<0.163",
+    "pydantic>=2.14.2,<2.15",
+    "pydantic-settings>=2.16.2,<2.17",
+    "uvicorn>=0.54.0,<0.55",
+]
 
 [dependency-groups]
 dev = [
+    "httpx>=0.28.1,<0.29",
     "mypy>=2.4.1,<2.5",
     "pre-commit>=4.7.0,<5",
     "pytest>=9.2.0,<10",
