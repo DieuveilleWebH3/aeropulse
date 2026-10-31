@@ -4,11 +4,11 @@
 
 AeroPulse is an engineering portfolio project demonstrating the design of a production-oriented predictive-maintenance platform with Python, FastAPI, event-driven processing, data engineering, observability, security, testing, and cloud infrastructure.
 
-> Current status: **Sprint 0 — FastAPI runtime bootstrap**
+> Current status: **Sprint 0 — Local runtime dependencies**
 
 ## Current bootstrap
 
-The repository now includes the first FastAPI runtime slice with validated settings, application lifespan management, and operational liveness/readiness probes.
+The repository now includes FastAPI plus local PostgreSQL and Redis runtime dependencies with dynamic liveness/readiness behavior.
 
 ### Prerequisites
 
@@ -39,6 +39,21 @@ Expected:
 
 ```text
 aeropulse
+```
+
+### Start local dependencies
+
+Create a local environment file:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Start PostgreSQL and Redis:
+
+```bash
+docker compose up -d
+docker compose ps
 ```
 
 ### Run the API
@@ -100,6 +115,7 @@ uv build
 - [Code quality and testing](docs/engineering/quality-and-testing.md)
 - [Continuous integration](docs/engineering/continuous-integration.md)
 - [FastAPI application bootstrap](docs/engineering/fastapi-application-bootstrap.md)
+- [Local runtime dependencies](docs/engineering/local-runtime-dependencies.md)
 
 ## Foundation roadmap
 
@@ -109,4 +125,4 @@ uv build
 - [x] S0-004 — Code quality and test toolchain
 - [x] S0-005 — Minimal GitHub Actions CI
 - [x] S0-006 — FastAPI application with `/health` and `/ready`
-- [ ] S0-007 — Local dependencies and Docker Compose
+- [x] S0-007 — Local dependencies and Docker Compose

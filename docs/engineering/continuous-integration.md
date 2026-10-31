@@ -37,10 +37,14 @@ The workflow contains one stable required job:
 CI / quality
 ```
 
+Starting with S0-007, that job also provisions PostgreSQL and Redis service containers so the
+runtime dependency adapters are validated against real services.
+
 The job performs, in order:
 
 ```text
-checkout
+start PostgreSQL + Redis service containers
+-> checkout
 -> install uv
 -> install Python
 -> validate uv.lock
@@ -49,7 +53,7 @@ checkout
 -> Ruff lint
 -> Ruff format check
 -> mypy
--> pytest + coverage
+-> pytest + coverage + live dependency integration
 ```
 
 ## 3. Why One Job?
@@ -62,12 +66,12 @@ Advantages at the current project size:
 - one stable branch-protection check;
 - simpler workflow ownership;
 - fewer moving pieces;
-- easier local/CI parity.
+- infrastructure integration is validated in the same required gate.
 
 This is a KISS decision.
 
-Split the workflow into parallel jobs only when measured runtime, fault isolation, or different runtime
-requirements justify the additional duplication.
+Split the workflow into parallel jobs only when measured runtime, fault isolation, permissions, or
+different runtime requirements justify the additional duplication.
 
 ## 4. Least-Privilege Permissions
 
@@ -191,7 +195,30 @@ Correctness must never depend on cache contents.
 
 If cache behavior becomes suspicious, CI must still work with caching disabled.
 
-## 10. Non-Mutating CI
+## 10. Runtime Service Containers
+
+S0-007 provisions:
+
+```text
+PostgreSQL 18.6
+Redis 8.10.3
+```
+
+as GitHub Actions service containers.
+
+The CI environment sets:
+
+```text
+AEROPULSE_RUN_EXTERNAL_SERVICE_TESTS=1
+```
+
+so the live runtime-dependency integration test executes.
+
+These services have development/CI-only credentials and no production secrets.
+
+Their health checks must succeed before the quality steps execute.
+
+## 11. Non-Mutating CI
 
 CI never runs:
 
@@ -211,7 +238,7 @@ Source mutation belongs to the developer/agent workspace before a PR is submitte
 
 CI reports drift; it does not rewrite the branch.
 
-## 11. Test Gate
+## 12. Test Gate
 
 The pytest command inherits S0-004's repository configuration, including:
 
@@ -230,7 +257,7 @@ is itself the coverage gate.
 
 There is no second independently configured coverage command.
 
-## 12. Concurrency
+## 13. Concurrency
 
 The workflow uses:
 
@@ -246,7 +273,7 @@ This reduces wasted runner capacity and avoids reviewers waiting on obsolete com
 
 Release/deployment workflows may require different concurrency semantics later.
 
-## 13. Timeout
+## 14. Timeout
 
 The quality job has:
 
@@ -261,7 +288,7 @@ A timeout prevents a hung tool or network operation from consuming a runner inde
 If ordinary CI approaches this limit, investigate the cause rather than immediately increasing the
 timeout.
 
-## 14. Branch Protection / Ruleset
+## 15. Branch Protection / Ruleset
 
 After S0-005 is merged and has run successfully, configure the repository's `main` ruleset/branch
 protection to require the CI status check.
@@ -278,7 +305,7 @@ Do not require a check before it has run at least once, because GitHub needs to 
 
 Human review remains required even when CI passes.
 
-## 15. Why Security Scanning Is Not Added Here
+## 16. Why Security Scanning Is Not Added Here
 
 S0-005 is the **minimal CI** ticket.
 
@@ -303,7 +330,7 @@ The existing CI still reduces security risk through:
 - no secrets;
 - no `pull_request_target`.
 
-## 16. Failure Interpretation
+## 17. Failure Interpretation
 
 ### `uv lock --check` fails
 
@@ -352,7 +379,7 @@ Fix the behavior or the test based on the ticket contract.
 
 Do not reduce the coverage floor merely to make CI green.
 
-## 17. Local CI Parity
+## 18. Local CI Parity
 
 Before pushing, a developer can reproduce the CI quality commands with:
 
@@ -365,9 +392,12 @@ uv run --locked mypy
 uv run --locked pytest
 ```
 
+The ordinary local suite skips the live PostgreSQL/Redis test unless
+`AEROPULSE_RUN_EXTERNAL_SERVICE_TESTS=1` is set. CI always enables it.
+
 Local Git hooks remain useful fast feedback, but GitHub Actions is the merge gate.
 
-## 18. Future Evolution Triggers
+## 19. Future Evolution Triggers
 
 Consider splitting jobs when:
 
@@ -381,7 +411,7 @@ Consider adding a Python-version matrix when AeroPulse officially supports more 
 
 Do not add a matrix merely to demonstrate GitHub Actions knowledge.
 
-## 19. Definition of Done
+## 20. Definition of Done
 
 S0-005 is complete when:
 
