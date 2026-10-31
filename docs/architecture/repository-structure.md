@@ -759,8 +759,7 @@ Use behavioral names.
 Example:
 
 ```python
-def test_register_aircraft_rejects_duplicate_registration():
-    ...
+def test_register_aircraft_rejects_duplicate_registration(): ...
 ```
 
 ---

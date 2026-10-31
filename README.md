@@ -8,7 +8,7 @@ AeroPulse is an engineering portfolio project demonstrating the design of a prod
 
 ## Current bootstrap
 
-The repository currently establishes the Python package/toolchain foundation. Application runtime dependencies such as FastAPI are intentionally introduced in later tickets.
+The repository currently establishes the Python package and engineering-quality foundation. Application runtime dependencies such as FastAPI are intentionally introduced in later tickets.
 
 ### Prerequisites
 
@@ -19,7 +19,14 @@ The repository currently establishes the Python package/toolchain foundation. Ap
 
 ```bash
 uv python install 3.14.10
+uv lock
 uv sync --locked
+```
+
+Install local Git hooks:
+
+```bash
+uv run --locked pre-commit install
 ```
 
 ### Verify the package
@@ -34,6 +41,22 @@ Expected:
 aeropulse
 ```
 
+### Quality checks
+
+```bash
+uv run --locked ruff check .
+uv run --locked ruff format --check .
+uv run --locked mypy
+uv run --locked pytest
+```
+
+Run local hook suites manually:
+
+```bash
+uv run --locked pre-commit run --all-files
+uv run --locked pre-commit run --all-files --hook-stage pre-push
+```
+
 ### Build
 
 ```bash
@@ -45,13 +68,14 @@ uv build
 - [Repository architecture](docs/architecture/repository-structure.md)
 - [Copilot agent strategy](docs/engineering/copilot-agent-strategy.md)
 - [Python toolchain](docs/engineering/python-toolchain.md)
+- [Code quality and testing](docs/engineering/quality-and-testing.md)
 
 ## Foundation roadmap
 
 - [x] S0-001 — Repository architecture and engineering guardrails
 - [x] S0-002 — Copilot agent governance and repository instructions
 - [x] S0-003 — Python + uv project bootstrap
-- [ ] S0-004 — Code quality and test toolchain
+- [x] S0-004 — Code quality and test toolchain
 - [ ] S0-005 — Minimal GitHub Actions CI
 - [ ] S0-006 — FastAPI application with `/health` and `/ready`
 - [ ] S0-007 — Local dependencies and Docker Compose
