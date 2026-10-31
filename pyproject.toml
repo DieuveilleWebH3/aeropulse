@@ -1,0 +1,14 @@
+[project]
+name = "aeropulse"
+version = "0.1.0"
+description = "Predictive Maintenance and Fleet Health Monitoring Platform"
+readme = "README.md"
+requires-python = ">=3.14,<3.15"
+dependencies = []
+
+[build-system]
+requires = ["uv_build>=0.13.6,<0.14"]
+build-backend = "uv_build"
+
+[tool.uv]
+required-version = ">=0.13.6,<0.14"
