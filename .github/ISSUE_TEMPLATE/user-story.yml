@@ -1,0 +1,75 @@
+name: User Story
+description: Define a scoped AeroPulse product or engineering story
+title: "[US] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Keep the story small enough for one coherent pull request.
+        Implementation must start with needs, plan, risks, mitigations, and validation.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / Context
+      description: What problem are we solving and why now?
+    validations:
+      required: true
+
+  - type: textarea
+    id: story
+    attributes:
+      label: User Story
+      description: "As a ..., I want ..., so that ..."
+      placeholder: |
+        As a ...
+        I want ...
+        So that ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: business-rules
+    attributes:
+      label: Business Rules / Invariants
+      description: Rules that must always remain true.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: Prefer testable Given / When / Then criteria.
+      placeholder: |
+        Given ...
+        When ...
+        Then ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: edge-cases
+    attributes:
+      label: Edge Cases
+      description: Duplicates, invalid input, concurrency, time, failure modes, permissions, etc.
+
+  - type: textarea
+    id: non-goals
+    attributes:
+      label: Non-goals
+      description: Explicitly state what this ticket will not implement.
+
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks / Security / Data Integrity
+      description: Known risks and expected mitigations.
+
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation
+      description: Tests, checks, demo, or evidence required to consider the ticket done.
+    validations:
+      required: true
