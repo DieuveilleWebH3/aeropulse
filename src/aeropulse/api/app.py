@@ -9,6 +9,8 @@ from fastapi import FastAPI
 
 from aeropulse.api.routes.system import router as system_router
 from aeropulse.api.runtime import RuntimeResourcesFactory
+from aeropulse.fleet.presentation.errors import register_fleet_exception_handlers
+from aeropulse.fleet.presentation.routes import router as fleet_router
 from aeropulse.platform.resources import create_runtime_resources
 from aeropulse.settings import Settings, load_settings
 
@@ -44,5 +46,8 @@ def create_app(
     app.state.settings = resolved_settings
     app.state.runtime_resources = None
     app.state.runtime_resources_factory = runtime_resources_factory
+
+    register_fleet_exception_handlers(app)
     app.include_router(system_router)
+    app.include_router(fleet_router)
     return app

@@ -4,7 +4,7 @@
 
 AeroPulse is an engineering portfolio project demonstrating the design of a production-oriented predictive-maintenance platform with Python, FastAPI, event-driven processing, data engineering, observability, security, testing, and cloud infrastructure.
 
-> Current status: **Sprint 1 — Fleet persistence**
+> Current status: **Sprint 1 — Aircraft registration HTTP API**
 
 ## Current bootstrap
 
@@ -37,8 +37,16 @@ Current domain guarantees include:
 - aircraft registration is read-only after creation;
 - duplicate registration is represented as an application-level business error.
 
-S1-002 now persists aircraft through PostgreSQL/SQLAlchemy, versions the schema with Alembic,
+S1-002 persists aircraft through PostgreSQL/SQLAlchemy, versions the schema with Alembic,
 and enforces canonical registration uniqueness with a database constraint.
+
+S1-003 exposes the first business API endpoint:
+
+```text
+POST /api/v1/aircraft
+```
+
+with transaction-scoped persistence and stable `409` / `422` business error contracts.
 
 ### Prerequisites
 
@@ -119,6 +127,29 @@ curl -i http://127.0.0.1:8000/health
 curl -i http://127.0.0.1:8000/ready
 ```
 
+### Register an aircraft
+
+```bash
+curl -i -X POST http://127.0.0.1:8000/api/v1/aircraft \
+  -H "Content-Type: application/json" \
+  -d '{"registration":"F-HABC"}'
+```
+
+Expected success:
+
+```text
+HTTP 201
+```
+
+```json
+{
+  "id": "<uuid>",
+  "registration": "F-HABC",
+  "status": "active",
+  "created_at": "<utc timestamp>"
+}
+```
+
 ### Quality checks
 
 ```bash
@@ -168,6 +199,7 @@ uv build
 - [Local runtime dependencies](docs/engineering/local-runtime-dependencies.md)
 - [Fleet domain — aircraft registration](docs/architecture/fleet-domain.md)
 - [Fleet persistence](docs/architecture/fleet-persistence.md)
+- [Fleet aircraft registration HTTP API](docs/architecture/fleet-http-api.md)
 
 ## Foundation roadmap
 
@@ -183,7 +215,7 @@ uv build
 
 - [x] S1-001 — Aircraft domain model and registration use case
 - [x] S1-002 — PostgreSQL aircraft persistence and Alembic
-- [ ] S1-003 — Aircraft registration HTTP API
+- [x] S1-003 — Aircraft registration HTTP API
 - [ ] S1-004 — Retrieve and list aircraft
 - [ ] S1-005 — Aircraft lifecycle / retirement
 - [ ] S1-006 — Equipment domain and persistence

@@ -5,6 +5,8 @@ from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass
 from types import TracebackType
 
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
 from aeropulse.platform.resources import (
     ApplicationResources,
     DatabaseConnection,
@@ -128,6 +130,7 @@ def test_application_resources_require_all_dependencies_to_be_ready() -> None:
         resources = ApplicationResources(
             postgres=PostgresResource(postgres_engine),
             redis=RedisResource(redis_client),
+            database_session_factory=async_sessionmaker(),
         )
 
         assert await resources.is_ready() is True
@@ -157,6 +160,10 @@ def test_runtime_resource_factory_builds_and_closes_clients_without_connecting()
 
         assert isinstance(resources.postgres, PostgresResource)
         assert isinstance(resources.redis, RedisResource)
+
+        session = resources.create_database_session()
+        assert isinstance(session, AsyncSession)
+        await session.close()
 
         await resources.close()
 
