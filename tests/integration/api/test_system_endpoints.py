@@ -1,5 +1,7 @@
 """Integration tests for AeroPulse operational HTTP endpoints."""
 
+from dataclasses import dataclass
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -7,12 +9,28 @@ from aeropulse.api.app import create_app
 from aeropulse.settings import Environment, Settings
 
 
+@dataclass
+class FakeRuntimeResources:
+    ready: bool = True
+    closed: bool = False
+
+    async def is_ready(self) -> bool:
+        return self.ready
+
+    async def close(self) -> None:
+        self.closed = True
+
+
 @pytest.fixture
 def test_settings() -> Settings:
-    return Settings(
-        app_name="AeroPulse Test",
-        environment=Environment.TEST,
-        debug=False,
+    return Settings.model_validate(
+        {
+            "app_name": "AeroPulse Test",
+            "environment": Environment.TEST,
+            "debug": False,
+            "database_url": "postgresql+asyncpg://user:password@localhost:5432/aeropulse",
+            "redis_url": "redis://localhost:6379/0",
+        }
     )
 
 
@@ -42,28 +60,55 @@ def test_readiness_is_unavailable_before_lifespan_startup(
     assert response.headers["cache-control"] == "no-store"
 
 
-def test_readiness_is_available_during_lifespan_and_unavailable_after_shutdown(
+def test_readiness_is_available_when_dependencies_are_ready(
     test_settings: Settings,
 ) -> None:
-    app = create_app(test_settings)
+    resources = FakeRuntimeResources(ready=True)
+    app = create_app(test_settings, runtime_resources_factory=lambda _: resources)
 
     with TestClient(app) as client:
         response = client.get("/ready")
 
-        assert response.status_code == 200
-        assert response.json() == {"status": "ready"}
+    assert response.status_code == 200
+    assert response.json() == {"status": "ready"}
+    assert resources.closed is True
 
-    client_after_shutdown = TestClient(app)
-    response_after_shutdown = client_after_shutdown.get("/ready")
+
+def test_readiness_becomes_unavailable_when_a_dependency_fails(
+    test_settings: Settings,
+) -> None:
+    resources = FakeRuntimeResources(ready=True)
+    app = create_app(test_settings, runtime_resources_factory=lambda _: resources)
+
+    with TestClient(app) as client:
+        initial_response = client.get("/ready")
+        resources.ready = False
+        degraded_response = client.get("/ready")
+
+    assert initial_response.status_code == 200
+    assert degraded_response.status_code == 503
+    assert degraded_response.json() == {"status": "not_ready"}
+
+
+def test_readiness_is_unavailable_after_shutdown(
+    test_settings: Settings,
+) -> None:
+    resources = FakeRuntimeResources()
+    app = create_app(test_settings, runtime_resources_factory=lambda _: resources)
+
+    with TestClient(app):
+        pass
+
+    response_after_shutdown = TestClient(app).get("/ready")
 
     assert response_after_shutdown.status_code == 503
-    assert response_after_shutdown.json() == {"status": "not_ready"}
 
 
 def test_operational_routes_are_excluded_from_openapi(
     test_settings: Settings,
 ) -> None:
-    app = create_app(test_settings)
+    resources = FakeRuntimeResources()
+    app = create_app(test_settings, runtime_resources_factory=lambda _: resources)
 
     with TestClient(app) as client:
         response = client.get("/openapi.json")
@@ -90,6 +135,11 @@ def test_application_factory_can_load_environment_settings(
     monkeypatch.setenv("AEROPULSE_APP_NAME", "AeroPulse From Environment")
     monkeypatch.setenv("AEROPULSE_ENVIRONMENT", "test")
     monkeypatch.setenv("AEROPULSE_DEBUG", "false")
+    monkeypatch.setenv(
+        "AEROPULSE_DATABASE_URL",
+        "postgresql+asyncpg://user:password@localhost:5432/aeropulse",
+    )
+    monkeypatch.setenv("AEROPULSE_REDIS_URL", "redis://localhost:6379/0")
 
     app = create_app()
 

@@ -43,6 +43,9 @@ The application is created with:
 create_app(settings: Settings | None = None) -> FastAPI
 ```
 
+When settings are not injected explicitly, `create_app()` uses the centralized `load_settings()`
+boundary to read environment/dotenv sources and validate the resulting configuration.
+
 rather than a module-level global application instance.
 
 Reasons:
@@ -187,23 +190,23 @@ Purpose:
 Is this application instance ready to receive production traffic?
 ```
 
-Before successful lifespan startup:
+Before runtime resources are initialized, or whenever a critical runtime dependency is unavailable:
 
 ```text
 503
 {"status": "not_ready"}
 ```
 
-During a successfully started lifespan:
+When PostgreSQL and Redis are both reachable:
 
 ```text
 200
 {"status": "ready"}
 ```
 
-Future critical startup dependencies can contribute to readiness.
+S0-007 extends readiness from startup state to dynamic dependency checks.
 
-They must not automatically be copied into liveness.
+Those dependency checks are deliberately not copied into liveness.
 
 ## 8. Probe Caching
 
@@ -230,16 +233,14 @@ Future business endpoints will live under:
 
 as defined by the repository architecture.
 
-## 10. Why No Database Readiness Check Yet?
+## 10. Database and Redis Readiness
 
-S0-006 has no database.
+S0-006 originally established the readiness boundary without external services.
 
-Adding a fake PostgreSQL check would create an abstraction without a dependency.
+S0-007 now provides real PostgreSQL and Redis dependencies and extends `/ready` to verify both
+dynamically.
 
-S0-007 will introduce local dependencies. The readiness design can then be extended based on real
-startup requirements.
-
-This follows YAGNI.
+The liveness endpoint remains intentionally independent from them.
 
 ## 11. Why No Custom Error Framework Yet?
 

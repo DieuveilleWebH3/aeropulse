@@ -372,6 +372,23 @@ A route must not implement business workflows directly.
 
 ---
 
+
+### 8.5 Platform
+
+`src/aeropulse/platform/` contains application-wide technical runtime integrations that do not
+belong to a single business bounded context.
+
+Examples:
+
+- PostgreSQL engine/pool lifecycle;
+- Redis client lifecycle;
+- cross-cutting runtime readiness adapters.
+
+It must not contain business rules, domain entities, or context-owned repositories.
+
+The root-level `infrastructure/` directory remains reserved for deployment/IaC assets such as Docker
+and Terraform; `src/aeropulse/platform/` is executable Python runtime infrastructure.
+
 ## 9. Cross-Context Dependency Rules
 
 Bounded contexts must not freely import each other's internal modules.
