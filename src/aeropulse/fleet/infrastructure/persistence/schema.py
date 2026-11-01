@@ -12,6 +12,7 @@ from sqlalchemy import (
     UniqueConstraint,
     Uuid,
 )
+from sqlalchemy.schema import conv
 
 AIRCRAFT_REGISTRATION_UNIQUE_CONSTRAINT = "uq_aircraft_registration"
 AIRCRAFT_STATUS_CHECK_CONSTRAINT = "ck_aircraft_status"
@@ -36,7 +37,7 @@ aircraft_table = Table(
     Column("created_at", DateTime(timezone=True), nullable=False),
     CheckConstraint(
         "status IN ('active', 'retired')",
-        name=AIRCRAFT_STATUS_CHECK_CONSTRAINT,
+        name=conv(AIRCRAFT_STATUS_CHECK_CONSTRAINT),
     ),
     UniqueConstraint(
         "registration",

@@ -114,6 +114,16 @@ Verify metadata and migration history remain aligned:
 uv run --locked --group migration alembic check
 ```
 
+
+After S1-004, the expected Alembic head is:
+
+```text
+20261101_0003
+```
+
+This corrective migration normalizes the aircraft status check-constraint name used by PostgreSQL
+and SQLAlchemy metadata.
+
 ### Run the API
 
 ```bash

@@ -252,6 +252,62 @@ Expected business result:
 
 A malformed UUID is different: it is a framework-level path-validation error and returns `422`.
 
+
+## Check-constraint naming correction
+
+S1-004 CI exposed a schema naming mismatch on PostgreSQL.
+
+The metadata naming convention is:
+
+```text
+ck_%(table_name)s_%(constraint_name)s
+```
+
+The status constraint was already passed as the complete intended name:
+
+```text
+ck_aircraft_status
+```
+
+Without marking that name as already converted, SQLAlchemy applied the convention again and the
+database received:
+
+```text
+ck_aircraft_ck_aircraft_status
+```
+
+The SQLAlchemy metadata now uses:
+
+```python
+name = conv(AIRCRAFT_STATUS_CHECK_CONSTRAINT)
+```
+
+so the final metadata name remains:
+
+```text
+ck_aircraft_status
+```
+
+Migration `20261101_0003` preserves existing migration history and converges both database states
+that can exist in development/CI:
+
+```text
+ck_aircraft_ck_aircraft_status -> rename to ck_aircraft_status
+ck_aircraft_status             -> already correct; no-op
+both names present             -> keep canonical and remove the duplicate historical name
+neither name present           -> fail loudly as genuine schema drift
+```
+
+This state-aware migration is necessary because some databases were originally created with the
+canonical explicit migration name, while SQLAlchemy naming-convention processing produced the
+doubled name in other environments.
+
+The S1-004 migration head is therefore now:
+
+```text
+20261101_0003
+```
+
 ## Validation
 
 S1-004 tests:
