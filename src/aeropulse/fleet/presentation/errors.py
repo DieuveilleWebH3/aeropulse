@@ -6,7 +6,10 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from starlette.responses import Response
 
-from aeropulse.fleet.application.errors import AircraftRegistrationAlreadyExists
+from aeropulse.fleet.application.errors import (
+    AircraftNotFound,
+    AircraftRegistrationAlreadyExists,
+)
 from aeropulse.fleet.domain.errors import InvalidAircraftRegistration
 from aeropulse.fleet.presentation.schemas import ApiErrorDetail, ApiErrorResponse
 
@@ -61,6 +64,21 @@ async def handle_aircraft_registration_already_exists(
     )
 
 
+async def handle_aircraft_not_found(
+    request: Request,
+    exc: Exception,
+) -> Response:
+    """Map a missing aircraft to HTTP 404."""
+    del request
+    error = cast(AircraftNotFound, exc)
+    return _error_response(
+        status_code=status.HTTP_404_NOT_FOUND,
+        code="aircraft_not_found",
+        message=str(error),
+        field=None,
+    )
+
+
 def register_fleet_exception_handlers(app: FastAPI) -> None:
     """Register Fleet business-to-HTTP exception mappings."""
     app.add_exception_handler(
@@ -70,4 +88,8 @@ def register_fleet_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(
         AircraftRegistrationAlreadyExists,
         handle_aircraft_registration_already_exists,
+    )
+    app.add_exception_handler(
+        AircraftNotFound,
+        handle_aircraft_not_found,
     )

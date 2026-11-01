@@ -4,6 +4,7 @@ from sqlalchemy import (
     CheckConstraint,
     Column,
     DateTime,
+    Index,
     MetaData,
     PrimaryKeyConstraint,
     String,
@@ -14,8 +15,17 @@ from sqlalchemy import (
 
 AIRCRAFT_REGISTRATION_UNIQUE_CONSTRAINT = "uq_aircraft_registration"
 AIRCRAFT_STATUS_CHECK_CONSTRAINT = "ck_aircraft_status"
+AIRCRAFT_LIST_INDEX = "ix_aircraft_created_at_id"
 
-metadata = MetaData()
+metadata = MetaData(
+    naming_convention={
+        "ix": "ix_%(column_0_label)s",
+        "uq": "uq_%(table_name)s_%(column_0_name)s",
+        "ck": "ck_%(table_name)s_%(constraint_name)s",
+        "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+        "pk": "pk_%(table_name)s",
+    }
+)
 
 aircraft_table = Table(
     "aircraft",
@@ -28,9 +38,15 @@ aircraft_table = Table(
         "status IN ('active', 'retired')",
         name=AIRCRAFT_STATUS_CHECK_CONSTRAINT,
     ),
-    PrimaryKeyConstraint("id", name="pk_aircraft"),
     UniqueConstraint(
         "registration",
         name=AIRCRAFT_REGISTRATION_UNIQUE_CONSTRAINT,
     ),
+    PrimaryKeyConstraint("id", name="pk_aircraft"),
+)
+
+Index(
+    AIRCRAFT_LIST_INDEX,
+    aircraft_table.c.created_at,
+    aircraft_table.c.id,
 )

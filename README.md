@@ -4,7 +4,7 @@
 
 AeroPulse is an engineering portfolio project demonstrating the design of a production-oriented predictive-maintenance platform with Python, FastAPI, event-driven processing, data engineering, observability, security, testing, and cloud infrastructure.
 
-> Current status: **Sprint 1 — Aircraft registration HTTP API**
+> Current status: **Sprint 1 — Retrieve & List Aircraft**
 
 ## Current bootstrap
 
@@ -186,6 +186,47 @@ HTTP/1.1 201 Created
 For duplicate and invalid-registration checks in both shells, see
 [Fleet aircraft registration HTTP API](docs/architecture/fleet-http-api.md#12-manual-validation).
 
+### Retrieve and list aircraft
+
+#### Windows PowerShell
+
+List the fleet and capture a real aircraft UUID from the response:
+
+```powershell
+$fleet = Invoke-RestMethod `
+    -Uri "http://127.0.0.1:8000/api/v1/aircraft?limit=50&offset=0"
+
+$fleet.items
+$aircraftId = $fleet.items[0].id
+```
+
+Retrieve that aircraft:
+
+```powershell
+Invoke-RestMethod `
+    -Uri "http://127.0.0.1:8000/api/v1/aircraft/$aircraftId"
+```
+
+Do not send the literal text `<aircraft-uuid>` in the URL. It is documentation notation, not a
+valid UUID, and FastAPI will correctly return a UUID parsing `422`.
+
+#### Bash / Git Bash / WSL
+
+List aircraft:
+
+```bash
+curl -i "http://127.0.0.1:8000/api/v1/aircraft?limit=50&offset=0"
+```
+
+Then copy an actual `id` returned in `items` into a shell variable:
+
+```bash
+AIRCRAFT_ID="fae526e4-10de-4371-bad5-c7028695992d"
+curl -i "http://127.0.0.1:8000/api/v1/aircraft/${AIRCRAFT_ID}"
+```
+
+The UUID above is only an example; use an ID returned by your local AeroPulse API.
+
 ### Quality checks
 
 ```bash
@@ -236,6 +277,7 @@ uv build
 - [Fleet domain — aircraft registration](docs/architecture/fleet-domain.md)
 - [Fleet persistence](docs/architecture/fleet-persistence.md)
 - [Fleet aircraft registration HTTP API](docs/architecture/fleet-http-api.md)
+- [Fleet aircraft read API](docs/architecture/fleet-read-api.md)
 
 ## Foundation roadmap
 
@@ -252,8 +294,15 @@ uv build
 - [x] S1-001 — Aircraft domain model and registration use case
 - [x] S1-002 — PostgreSQL aircraft persistence and Alembic
 - [x] S1-003 — Aircraft registration HTTP API
-- [ ] S1-004 — Retrieve and list aircraft
+- [x] S1-004 — Retrieve and list aircraft
 - [ ] S1-005 — Aircraft lifecycle / retirement
 - [ ] S1-006 — Equipment domain and persistence
 - [ ] S1-007 — Equipment HTTP API
 - [ ] S1-008 — Fleet integration and E2E validation
+
+## License
+
+AeroPulse is released under the [MIT License](LICENSE).
+
+The project is an engineering demonstrator and does not claim certified aerospace,
+airworthiness, or maintenance-decision authority.

@@ -7,10 +7,10 @@ from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from aeropulse.api.runtime import RuntimeResources
+from aeropulse.fleet.application.get_aircraft import GetAircraftHandler
+from aeropulse.fleet.application.list_aircraft import ListAircraftHandler
 from aeropulse.fleet.application.register_aircraft import RegisterAircraftHandler
-from aeropulse.fleet.infrastructure.persistence.repository import (
-    SqlAlchemyAircraftRepository,
-)
+from aeropulse.fleet.infrastructure.persistence.repository import SqlAlchemyAircraftRepository
 
 
 async def get_database_session(request: Request) -> AsyncIterator[AsyncSession]:
@@ -39,7 +39,29 @@ def get_register_aircraft_handler(session: DatabaseSession) -> RegisterAircraftH
     return RegisterAircraftHandler(repository)
 
 
+def get_aircraft_handler(session: DatabaseSession) -> GetAircraftHandler:
+    """Compose the get-aircraft use case for one transaction."""
+    repository = SqlAlchemyAircraftRepository(session)
+    return GetAircraftHandler(repository)
+
+
+def get_list_aircraft_handler(session: DatabaseSession) -> ListAircraftHandler:
+    """Compose the list-aircraft use case for one transaction."""
+    repository = SqlAlchemyAircraftRepository(session)
+    return ListAircraftHandler(repository)
+
+
 type RegisterAircraftHandlerDependency = Annotated[
     RegisterAircraftHandler,
     Depends(get_register_aircraft_handler),
+]
+
+type GetAircraftHandlerDependency = Annotated[
+    GetAircraftHandler,
+    Depends(get_aircraft_handler),
+]
+
+type ListAircraftHandlerDependency = Annotated[
+    ListAircraftHandler,
+    Depends(get_list_aircraft_handler),
 ]

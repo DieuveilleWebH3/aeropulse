@@ -2,6 +2,7 @@
 
 from datetime import UTC, datetime
 from enum import StrEnum
+from typing import Self
 from uuid import UUID
 
 from aeropulse.fleet.domain.value_objects import AircraftRegistration
@@ -38,6 +39,24 @@ class Aircraft:
         self._registration = registration
         self._created_at = created_at.astimezone(UTC)
         self._status = AircraftStatus.ACTIVE
+
+    @classmethod
+    def rehydrate(
+        cls,
+        *,
+        id: UUID,
+        registration: AircraftRegistration,
+        status: AircraftStatus,
+        created_at: datetime,
+    ) -> Self:
+        """Restore an Aircraft from trusted persisted state."""
+        aircraft = cls(
+            id=id,
+            registration=registration,
+            created_at=created_at,
+        )
+        aircraft._status = status
+        return aircraft
 
     @property
     def id(self) -> UUID:

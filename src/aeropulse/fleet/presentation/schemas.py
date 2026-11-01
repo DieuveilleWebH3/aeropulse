@@ -1,4 +1,4 @@
-"""HTTP schemas for Fleet aircraft registration."""
+"""HTTP schemas for Fleet aircraft APIs."""
 
 from datetime import datetime
 from typing import Self
@@ -6,6 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
+from aeropulse.fleet.application.queries import AircraftPage
 from aeropulse.fleet.domain.aircraft import Aircraft, AircraftStatus
 
 
@@ -33,6 +34,25 @@ class AircraftResponse(BaseModel):
             registration=aircraft.registration.value,
             status=aircraft.status,
             created_at=aircraft.created_at,
+        )
+
+
+class AircraftListResponse(BaseModel):
+    """Paginated HTTP representation of Fleet aircraft."""
+
+    items: list[AircraftResponse]
+    total: int
+    limit: int
+    offset: int
+
+    @classmethod
+    def from_application(cls, page: AircraftPage) -> Self:
+        """Map an application aircraft page to the HTTP contract."""
+        return cls(
+            items=[AircraftResponse.from_domain(aircraft) for aircraft in page.items],
+            total=page.total,
+            limit=page.limit,
+            offset=page.offset,
         )
 
 

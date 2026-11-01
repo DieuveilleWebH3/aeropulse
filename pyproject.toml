@@ -3,6 +3,8 @@ name = "aeropulse"
 version = "0.1.0"
 description = "Predictive Maintenance and Fleet Health Monitoring Platform"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.14,<3.15"
 dependencies = [
     "asyncpg>=0.32.0,<0.33",

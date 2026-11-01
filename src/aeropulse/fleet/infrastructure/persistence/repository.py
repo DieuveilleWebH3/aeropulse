@@ -1,15 +1,17 @@
-"""SQLAlchemy implementation of the Fleet aircraft repository port."""
+"""SQLAlchemy implementation of Fleet aircraft repository ports."""
 
 from collections.abc import Iterator
+from datetime import datetime
+from typing import cast
+from uuid import UUID
 
-from sqlalchemy import insert, select
+from sqlalchemy import func, insert, select
+from sqlalchemy.engine import RowMapping
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from aeropulse.fleet.domain.aircraft import Aircraft
-from aeropulse.fleet.domain.repositories import (
-    AircraftRegistrationConflict,
-)
+from aeropulse.fleet.domain.aircraft import Aircraft, AircraftStatus
+from aeropulse.fleet.domain.repositories import AircraftRegistrationConflict
 from aeropulse.fleet.domain.value_objects import AircraftRegistration
 from aeropulse.fleet.infrastructure.persistence.schema import (
     AIRCRAFT_REGISTRATION_UNIQUE_CONSTRAINT,
@@ -34,8 +36,18 @@ def _is_registration_unique_violation(exc: IntegrityError) -> bool:
     )
 
 
+def _row_to_aircraft(row: RowMapping) -> Aircraft:
+    """Rehydrate a domain Aircraft from one trusted database row."""
+    return Aircraft.rehydrate(
+        id=cast(UUID, row["id"]),
+        registration=AircraftRegistration(cast(str, row["registration"])),
+        status=AircraftStatus(cast(str, row["status"])),
+        created_at=cast(datetime, row["created_at"]),
+    )
+
+
 class SqlAlchemyAircraftRepository:
-    """Persist Aircraft aggregates using one caller-owned AsyncSession."""
+    """Persist and query Aircraft aggregates using one caller-owned AsyncSession."""
 
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
@@ -68,3 +80,30 @@ class SqlAlchemyAircraftRepository:
             if _is_registration_unique_violation(exc):
                 raise AircraftRegistrationConflict(aircraft.registration) from exc
             raise
+
+    async def get_by_id(self, aircraft_id: UUID) -> Aircraft | None:
+        """Return one rehydrated Aircraft by identifier."""
+        statement = select(aircraft_table).where(aircraft_table.c.id == aircraft_id)
+        result = await self._session.execute(statement)
+        row = result.mappings().one_or_none()
+        return None if row is None else _row_to_aircraft(row)
+
+    async def list_aircraft(self, *, limit: int, offset: int) -> list[Aircraft]:
+        """Return one deterministic aircraft page ordered by creation time and ID."""
+        statement = (
+            select(aircraft_table)
+            .order_by(
+                aircraft_table.c.created_at.asc(),
+                aircraft_table.c.id.asc(),
+            )
+            .limit(limit)
+            .offset(offset)
+        )
+        result = await self._session.execute(statement)
+        return [_row_to_aircraft(row) for row in result.mappings().all()]
+
+    async def count_aircraft(self) -> int:
+        """Return the total number of persisted aircraft."""
+        statement = select(func.count()).select_from(aircraft_table)
+        result = await self._session.execute(statement)
+        return int(result.scalar_one())
