@@ -239,7 +239,186 @@ S1-003 does not implement:
 
 These belong to later stories.
 
-## 12. Definition of Done
+
+## 12. Manual Validation
+
+Before exercising the endpoint, make sure PostgreSQL is running, the current Alembic migration has
+been applied, and Uvicorn is listening on `127.0.0.1:8000`.
+
+### Windows PowerShell — recommended
+
+Prefer PowerShell-native JSON serialization so shell quoting cannot corrupt the request body:
+
+```powershell
+$body = @{
+    registration = "F-HABC"
+} | ConvertTo-Json
+
+Invoke-RestMethod `
+    -Uri "http://127.0.0.1:8000/api/v1/aircraft" `
+    -Method Post `
+    -ContentType "application/json" `
+    -Body $body
+```
+
+Expected parsed response:
+
+```json
+{
+  "id": "<uuid>",
+  "registration": "F-HABC",
+  "status": "active",
+  "created_at": "<utc timestamp>"
+}
+```
+
+To inspect the raw HTTP status and headers instead, use `Invoke-WebRequest`:
+
+```powershell
+$body = @{
+    registration = "F-HABC"
+} | ConvertTo-Json
+
+Invoke-WebRequest `
+    -Uri "http://127.0.0.1:8000/api/v1/aircraft" `
+    -Method Post `
+    -ContentType "application/json" `
+    -Body $body
+```
+
+### Windows PowerShell — `curl.exe` alternative
+
+When calling native `curl.exe`, escape the embedded JSON double quotes explicitly:
+
+```powershell
+curl.exe -i -X POST http://127.0.0.1:8000/api/v1/aircraft `
+  -H "Content-Type: application/json" `
+  --data-raw "{`"registration`":`"F-HABC`"}"
+```
+
+Do **not** copy the bash form below directly into native Windows `curl.exe`:
+
+```text
+-d '{"registration":"F-HABC"}'
+```
+
+Native-command quoting can cause malformed JSON to reach FastAPI. A response such as:
+
+```json
+{
+  "detail": [
+    {
+      "type": "json_invalid",
+      "msg": "JSON decode error"
+    }
+  ]
+}
+```
+
+means the HTTP body could not be parsed. It is a framework-level request parsing failure; the Fleet
+registration use case was **not** executed.
+
+### Bash / Git Bash / WSL
+
+```bash
+curl -i -X POST http://127.0.0.1:8000/api/v1/aircraft \
+  -H "Content-Type: application/json" \
+  -d '{"registration":"F-HABC"}'
+```
+
+Expected:
+
+```text
+HTTP/1.1 201 Created
+```
+
+### Duplicate-registration check
+
+PowerShell:
+
+```powershell
+$body = @{
+    registration = " f-habc "
+} | ConvertTo-Json
+
+try {
+    Invoke-RestMethod `
+        -Uri "http://127.0.0.1:8000/api/v1/aircraft" `
+        -Method Post `
+        -ContentType "application/json" `
+        -Body $body
+} catch {
+    $_.Exception.Response.StatusCode
+    $_.ErrorDetails.Message
+}
+```
+
+Bash:
+
+```bash
+curl -i -X POST http://127.0.0.1:8000/api/v1/aircraft \
+  -H "Content-Type: application/json" \
+  -d '{"registration":" f-habc "}'
+```
+
+Expected:
+
+```text
+409 Conflict
+```
+
+with application error code:
+
+```text
+aircraft_registration_already_exists
+```
+
+### Invalid-domain-registration check
+
+PowerShell:
+
+```powershell
+$body = @{
+    registration = "F/HABC"
+} | ConvertTo-Json
+
+try {
+    Invoke-RestMethod `
+        -Uri "http://127.0.0.1:8000/api/v1/aircraft" `
+        -Method Post `
+        -ContentType "application/json" `
+        -Body $body
+} catch {
+    $_.Exception.Response.StatusCode
+    $_.ErrorDetails.Message
+}
+```
+
+Bash:
+
+```bash
+curl -i -X POST http://127.0.0.1:8000/api/v1/aircraft \
+  -H "Content-Type: application/json" \
+  -d '{"registration":"F/HABC"}'
+```
+
+Expected:
+
+```text
+422 Unprocessable Content
+```
+
+with application error code:
+
+```text
+invalid_aircraft_registration
+```
+
+This domain-level `422` is intentionally different from FastAPI's `json_invalid` response: the
+former means valid JSON reached the Fleet use case and violated a business invariant; the latter
+means the JSON body could not be decoded at all.
+
+## 13. Definition of Done
 
 S1-003 is complete when:
 

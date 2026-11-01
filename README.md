@@ -129,6 +129,39 @@ curl -i http://127.0.0.1:8000/ready
 
 ### Register an aircraft
 
+Use the example for your shell. PowerShell and bash do not handle native-command quoting in exactly
+the same way.
+
+#### Windows PowerShell — recommended
+
+```powershell
+$body = @{
+    registration = "F-HABC"
+} | ConvertTo-Json
+
+Invoke-RestMethod `
+    -Uri "http://127.0.0.1:8000/api/v1/aircraft" `
+    -Method Post `
+    -ContentType "application/json" `
+    -Body $body
+```
+
+To inspect the raw status and headers, use `Invoke-WebRequest` with the same `$body`.
+
+#### Windows PowerShell — `curl.exe` alternative
+
+```powershell
+curl.exe -i -X POST http://127.0.0.1:8000/api/v1/aircraft `
+  -H "Content-Type: application/json" `
+  --data-raw "{`"registration`":`"F-HABC`"}"
+```
+
+Do **not** use the bash-oriented `-d '{"registration":"F-HABC"}'` form with native Windows
+`curl.exe`; shell quoting can turn it into malformed JSON and FastAPI will return a framework-level
+`422` with `type: "json_invalid"` before the Fleet use case runs.
+
+#### Bash / Git Bash / WSL
+
 ```bash
 curl -i -X POST http://127.0.0.1:8000/api/v1/aircraft \
   -H "Content-Type: application/json" \
@@ -138,7 +171,7 @@ curl -i -X POST http://127.0.0.1:8000/api/v1/aircraft \
 Expected success:
 
 ```text
-HTTP 201
+HTTP/1.1 201 Created
 ```
 
 ```json
@@ -149,6 +182,9 @@ HTTP 201
   "created_at": "<utc timestamp>"
 }
 ```
+
+For duplicate and invalid-registration checks in both shells, see
+[Fleet aircraft registration HTTP API](docs/architecture/fleet-http-api.md#12-manual-validation).
 
 ### Quality checks
 
