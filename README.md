@@ -6,7 +6,7 @@ AeroPulse is a production-oriented aircraft Prognostics and Health Management (P
 
 > AeroPulse uses public or synthetic data and does not claim certified airworthiness or maintenance-decision authority.
 
-> Current status: **Sprint 1 — Equipment HTTP API**
+> Current status: **Sprint 1 complete — Fleet & Asset Management**
 
 
 ## Project governance
@@ -374,6 +374,32 @@ curl -i -X POST   "http://127.0.0.1:8000/api/v1/aircraft/${AIRCRAFT_ID}/equipmen
 curl -i   "http://127.0.0.1:8000/api/v1/aircraft/${AIRCRAFT_ID}/equipment?limit=50&offset=0"
 ```
 
+### Sprint 1 integrated Fleet slice
+
+S1-008 closes Sprint 1 with black-box E2E validation of the assembled Fleet workflow:
+
+```text
+ready
+  -> register Aircraft
+  -> register/retrieve/list Equipment
+  -> retire Aircraft
+  -> repeat retirement idempotently
+  -> keep existing Equipment readable
+  -> reject new Equipment on the retired Aircraft
+```
+
+A second E2E scenario proves that `(part_number, serial_number)` identifies one physical
+Equipment item across the fleet and cannot be attached to two Aircraft.
+
+Run the Sprint 1 E2E acceptance suite with PostgreSQL and Redis running:
+
+```powershell
+$env:AEROPULSE_RUN_EXTERNAL_SERVICE_TESTS = "1"
+uv run --locked pytest -m e2e
+```
+
+See [Sprint 1 Fleet integration & E2E validation](docs/architecture/sprint-1-fleet-e2e.md).
+
 ### Quality checks
 
 ```bash
@@ -381,6 +407,12 @@ uv run --locked ruff check .
 uv run --locked ruff format --check .
 uv run --locked mypy
 uv run --locked pytest
+```
+
+With PostgreSQL and Redis available, the focused Sprint 1 acceptance gate is:
+
+```bash
+uv run --locked pytest -m e2e
 ```
 
 Run local hook suites manually:
@@ -427,6 +459,8 @@ uv build
 - [Fleet aircraft read API](docs/architecture/fleet-read-api.md)
 - [Fleet aircraft lifecycle](docs/architecture/fleet-lifecycle.md)
 - [Equipment domain & persistence](docs/architecture/equipment-domain-persistence.md)
+- [Equipment HTTP API](docs/architecture/equipment-http-api.md)
+- [Sprint 1 Fleet integration & E2E validation](docs/architecture/sprint-1-fleet-e2e.md)
 - [GitHub repository profile](docs/github/repository-profile.md)
 
 ## Foundation roadmap
@@ -448,7 +482,7 @@ uv build
 - [x] S1-005 — Aircraft lifecycle / retirement
 - [x] S1-006 — Equipment domain and persistence
 - [x] S1-007 — Equipment HTTP API
-- [ ] S1-008 — Fleet integration and E2E validation
+- [x] S1-008 — Fleet integration and E2E validation
 
 ## License
 

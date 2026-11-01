@@ -126,12 +126,19 @@ export AEROPULSE_RUN_EXTERNAL_SERVICE_TESTS=1
 
 Then rerun `pytest`.
 
+For complete user-visible workflows, run the registered E2E suite explicitly:
+
+```bash
+uv run --locked pytest -m e2e
+```
+
 New behavior should have tests at the lowest useful level:
 
 - domain unit tests for invariants;
 - application unit tests for orchestration/business outcomes;
 - repository/infrastructure integration tests for database contracts;
 - HTTP contract/integration tests for exposed APIs;
+- E2E tests for complete assembled user-visible workflows;
 - failure/concurrency tests where correctness depends on races or retries.
 
 The project requires at least 90% coverage, but meaningful assertions are more

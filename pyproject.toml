@@ -83,6 +83,7 @@ filterwarnings = [
 ]
 markers = [
     "external_services: requires live PostgreSQL and Redis services",
+    "e2e: exercises a complete user-visible workflow through the assembled application",
 ]
 
 [tool.coverage.run]
