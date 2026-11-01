@@ -16,7 +16,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "httpx>=0.28.1,<0.29",
+    "httpx2>=2.16.0,<3",
     "mypy>=2.4.1,<2.5",
     "pre-commit>=4.7.0,<5",
     "pytest>=9.2.0,<10",
@@ -69,6 +69,9 @@ minversion = "9.2"
 testpaths = ["tests"]
 addopts = "-ra --strict-config --strict-markers --cov=aeropulse --cov-report=term-missing:skip-covered --cov-fail-under=90"
 xfail_strict = true
+filterwarnings = [
+    "error::starlette.exceptions.StarletteDeprecationWarning",
+]
 markers = [
     "external_services: requires live PostgreSQL and Redis services",
 ]

@@ -173,6 +173,24 @@ uv run --locked pre-commit run --all-files
 uv run --locked pre-commit run --all-files --hook-stage pre-push
 ```
 
+
+## Deprecation Warning Policy
+
+Known framework deprecations should not remain permanently visible in the test suite.
+
+AeroPulse currently promotes:
+
+```text
+starlette.exceptions.StarletteDeprecationWarning
+```
+
+to a pytest error.
+
+This protects the `TestClient` stack from silently falling back to deprecated `httpx` behavior.
+
+Do not globally convert every Python warning to an error without review. Warning escalation should
+remain targeted so third-party noise does not make the suite unnecessarily brittle.
+
 ## 6. Test Layout
 
 The architecture remains:
