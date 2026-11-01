@@ -135,15 +135,25 @@ PowerShell:
 
 ```powershell
 $env:AEROPULSE_RUN_EXTERNAL_SERVICE_TESTS = "1"
-uv run --locked pytest -m e2e
+uv run --locked pytest -m e2e --no-cov
 ```
 
 Bash:
 
 ```bash
 export AEROPULSE_RUN_EXTERNAL_SERVICE_TESTS=1
-uv run --locked pytest -m e2e
+uv run --locked pytest -m e2e --no-cov
 ```
+
+E2E-only coverage diagnostic:
+
+```bash
+uv run --locked pytest -m e2e --cov-fail-under=0
+```
+
+This report is informative. The authoritative `coverage >= 90%` requirement is evaluated against
+the complete regression suite, because a narrow E2E selection intentionally does not execute every
+unit/error/concurrency branch.
 
 Run the complete regression suite afterward:
 
@@ -207,7 +217,7 @@ uv run --locked pytest
 With external services enabled, additionally run:
 
 ```bash
-uv run --locked pytest -m e2e
+uv run --locked pytest -m e2e --no-cov
 ```
 
 Required outcomes:

@@ -374,6 +374,23 @@ curl -i -X POST   "http://127.0.0.1:8000/api/v1/aircraft/${AIRCRAFT_ID}/equipmen
 curl -i   "http://127.0.0.1:8000/api/v1/aircraft/${AIRCRAFT_ID}/equipment?limit=50&offset=0"
 ```
 
+### Interactive API documentation
+
+With the API running locally, AeroPulse exposes built-in OpenAPI documentation:
+
+```text
+Swagger UI   http://127.0.0.1:8000/docs
+ReDoc        http://127.0.0.1:8000/redoc
+OpenAPI JSON http://127.0.0.1:8000/openapi.json
+```
+
+Swagger UI is the primary interactive interface for exploring and executing the current Aircraft
+and Equipment APIs. A dedicated visual dashboard is intentionally deferred until later PHM sprints
+introduce telemetry, health scores, anomaly timelines, degradation/RUL views, and maintenance
+recommendations.
+
+See [API documentation experience](docs/engineering/api-documentation.md).
+
 ### Sprint 1 integrated Fleet slice
 
 S1-008 closes Sprint 1 with black-box E2E validation of the assembled Fleet workflow:
@@ -395,7 +412,7 @@ Run the Sprint 1 E2E acceptance suite with PostgreSQL and Redis running:
 
 ```powershell
 $env:AEROPULSE_RUN_EXTERNAL_SERVICE_TESTS = "1"
-uv run --locked pytest -m e2e
+uv run --locked pytest -m e2e --no-cov
 ```
 
 See [Sprint 1 Fleet integration & E2E validation](docs/architecture/sprint-1-fleet-e2e.md).
@@ -412,8 +429,16 @@ uv run --locked pytest
 With PostgreSQL and Redis available, the focused Sprint 1 acceptance gate is:
 
 ```bash
-uv run --locked pytest -m e2e
+uv run --locked pytest -m e2e --no-cov
 ```
+
+E2E-only coverage diagnostic:
+
+```bash
+uv run --locked pytest -m e2e --cov-fail-under=0
+```
+
+The `>=90%` coverage requirement remains attached to the complete `pytest` suite.
 
 Run local hook suites manually:
 
@@ -452,6 +477,7 @@ uv build
 - [Code quality and testing](docs/engineering/quality-and-testing.md)
 - [Continuous integration](docs/engineering/continuous-integration.md)
 - [FastAPI application bootstrap](docs/engineering/fastapi-application-bootstrap.md)
+- [API documentation experience](docs/engineering/api-documentation.md)
 - [Local runtime dependencies](docs/engineering/local-runtime-dependencies.md)
 - [Fleet domain — aircraft registration](docs/architecture/fleet-domain.md)
 - [Fleet persistence](docs/architecture/fleet-persistence.md)

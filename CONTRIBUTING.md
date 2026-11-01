@@ -129,8 +129,17 @@ Then rerun `pytest`.
 For complete user-visible workflows, run the registered E2E suite explicitly:
 
 ```bash
-uv run --locked pytest -m e2e
+uv run --locked pytest -m e2e --no-cov
 ```
+
+Inspect E2E-only coverage without enforcing the project-wide 90% threshold:
+
+```bash
+uv run --locked pytest -m e2e --cov-fail-under=0
+```
+
+The project-wide `coverage >= 90%` gate belongs to the complete test suite, not a filtered marker
+subset.
 
 New behavior should have tests at the lowest useful level:
 

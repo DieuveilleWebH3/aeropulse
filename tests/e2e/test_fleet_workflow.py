@@ -213,3 +213,96 @@ def test_equipment_physical_identity_is_unique_across_the_fleet() -> None:
             assert second_aircraft_equipment.json()["items"] == []
     finally:
         asyncio.run(_cleanup(aircraft_ids))
+
+
+def test_public_failure_contracts_end_to_end() -> None:
+    """Exercise representative public error paths through the assembled application."""
+    aircraft_ids: set[UUID] = set()
+    registration = _registration("ER")
+
+    try:
+        with TestClient(create_app()) as client:
+            health = client.get("/health")
+            assert health.status_code == 200
+            assert health.json() == {"status": "ok"}
+
+            invalid_registration = client.post(
+                "/api/v1/aircraft",
+                json={"registration": "F/HABC"},
+            )
+            assert invalid_registration.status_code == 422
+            assert invalid_registration.json()["error"]["code"] == ("invalid_aircraft_registration")
+
+            created = client.post(
+                "/api/v1/aircraft",
+                json={"registration": registration},
+            )
+            assert created.status_code == 201
+            aircraft_id = UUID(created.json()["id"])
+            aircraft_ids.add(aircraft_id)
+
+            duplicate_aircraft = client.post(
+                "/api/v1/aircraft",
+                json={"registration": registration.lower()},
+            )
+            assert duplicate_aircraft.status_code == 409
+            assert duplicate_aircraft.json()["error"]["code"] == (
+                "aircraft_registration_already_exists"
+            )
+
+            invalid_equipment_type = client.post(
+                f"/api/v1/aircraft/{aircraft_id}/equipment",
+                json={
+                    "equipment_type": "engine control",
+                    "part_number": "PN-ERR-1",
+                    "serial_number": "SN-ERR-1",
+                },
+            )
+            assert invalid_equipment_type.status_code == 422
+            assert invalid_equipment_type.json()["error"]["code"] == ("invalid_equipment_type")
+
+            invalid_part_number = client.post(
+                f"/api/v1/aircraft/{aircraft_id}/equipment",
+                json={
+                    "equipment_type": "engine-control",
+                    "part_number": "PN ERR 2",
+                    "serial_number": "SN-ERR-2",
+                },
+            )
+            assert invalid_part_number.status_code == 422
+            assert invalid_part_number.json()["error"]["code"] == ("invalid_equipment_part_number")
+
+            invalid_serial_number = client.post(
+                f"/api/v1/aircraft/{aircraft_id}/equipment",
+                json={
+                    "equipment_type": "engine-control",
+                    "part_number": "PN-ERR-3",
+                    "serial_number": "SN ERR 3",
+                },
+            )
+            assert invalid_serial_number.status_code == 422
+            assert invalid_serial_number.json()["error"]["code"] == (
+                "invalid_equipment_serial_number"
+            )
+
+            unknown_aircraft_id = uuid4()
+            unknown_equipment_id = uuid4()
+
+            missing_aircraft = client.get(f"/api/v1/aircraft/{unknown_aircraft_id}")
+            assert missing_aircraft.status_code == 404
+            assert missing_aircraft.json()["error"]["code"] == "aircraft_not_found"
+
+            missing_equipment = client.get(f"/api/v1/equipment/{unknown_equipment_id}")
+            assert missing_equipment.status_code == 404
+            assert missing_equipment.json()["error"]["code"] == "equipment_not_found"
+
+            missing_parent_collection = client.get(
+                f"/api/v1/aircraft/{unknown_aircraft_id}/equipment"
+            )
+            assert missing_parent_collection.status_code == 404
+            assert missing_parent_collection.json()["error"]["code"] == ("aircraft_not_found")
+
+            invalid_pagination = client.get(f"/api/v1/aircraft/{aircraft_id}/equipment?limit=101")
+            assert invalid_pagination.status_code == 422
+    finally:
+        asyncio.run(_cleanup(aircraft_ids))
