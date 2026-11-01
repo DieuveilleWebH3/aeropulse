@@ -16,6 +16,7 @@ class AircraftConstraints(TypedDict):
     unique: set[str | None]
     checks: set[str | None]
     indexes: set[str | None]
+    columns: set[str]
 
 
 pytestmark = [
@@ -41,6 +42,8 @@ def test_aircraft_schema_has_required_integrity_constraints() -> None:
         assert constraints["primary_key"] == "pk_aircraft"
         assert "uq_aircraft_registration" in constraints["unique"]
         assert "ck_aircraft_status" in constraints["checks"]
+        assert "ck_aircraft_retirement_state" in constraints["checks"]
+        assert "retired_at" in constraints["columns"]
         assert "ix_aircraft_created_at_id" in constraints["indexes"]
 
     asyncio.run(scenario())
@@ -52,10 +55,12 @@ def _aircraft_constraints(connection: Connection) -> AircraftConstraints:
     unique_constraints = inspector.get_unique_constraints("aircraft")
     check_constraints = inspector.get_check_constraints("aircraft")
     indexes = inspector.get_indexes("aircraft")
+    columns = inspector.get_columns("aircraft")
 
     return {
         "primary_key": primary_key["name"],
         "unique": {item["name"] for item in unique_constraints},
         "checks": {item["name"] for item in check_constraints},
         "indexes": {item["name"] for item in indexes},
+        "columns": {str(item["name"]) for item in columns},
     }

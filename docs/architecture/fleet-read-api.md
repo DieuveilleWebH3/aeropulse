@@ -133,7 +133,7 @@ Read persistence needs to restore historical state, including future `RETIRED` a
 therefore exposes:
 
 ```text
-Aircraft.rehydrate(..., status=...)
+Aircraft.rehydrate(..., status=..., retired_at=...)
 ```
 
 for trusted persisted state.
@@ -307,6 +307,32 @@ The S1-004 migration head is therefore now:
 ```text
 20261101_0003
 ```
+
+
+## S1-005 lifecycle read state
+
+S1-005 extends persisted Aircraft state with:
+
+```text
+retired_at
+```
+
+Read-side rehydration therefore restores both lifecycle fields:
+
+```text
+status
+retired_at
+```
+
+and the domain validates:
+
+```text
+ACTIVE  -> retired_at is null
+RETIRED -> retired_at is present and retired_at >= created_at
+```
+
+The S1-004 check-constraint naming correction remains migration `20261101_0003`; S1-005 starts at
+`20261101_0004` and does not rewrite that migration.
 
 ## Validation
 

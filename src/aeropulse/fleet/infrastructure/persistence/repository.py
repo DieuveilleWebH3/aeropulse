@@ -1,39 +1,27 @@
 """SQLAlchemy implementation of Fleet aircraft repository ports."""
 
-from collections.abc import Iterator
 from datetime import datetime
-from typing import cast
+from typing import Any, cast
 from uuid import UUID
 
-from sqlalchemy import func, insert, select
-from sqlalchemy.engine import RowMapping
+from sqlalchemy import func, insert, select, update
+from sqlalchemy.engine import CursorResult, RowMapping
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from aeropulse.fleet.domain.aircraft import Aircraft, AircraftStatus
-from aeropulse.fleet.domain.repositories import AircraftRegistrationConflict
+from aeropulse.fleet.domain.repositories import (
+    AircraftRegistrationConflict,
+    AircraftRetirementConflict,
+)
 from aeropulse.fleet.domain.value_objects import AircraftRegistration
+from aeropulse.fleet.infrastructure.persistence.constraint_errors import (
+    is_named_constraint_violation,
+)
 from aeropulse.fleet.infrastructure.persistence.schema import (
     AIRCRAFT_REGISTRATION_UNIQUE_CONSTRAINT,
     aircraft_table,
 )
-
-
-def _exception_chain(exc: BaseException) -> Iterator[BaseException]:
-    current: BaseException | None = exc
-    seen: set[int] = set()
-
-    while current is not None and id(current) not in seen:
-        seen.add(id(current))
-        yield current
-        current = current.__cause__ or current.__context__
-
-
-def _is_registration_unique_violation(exc: IntegrityError) -> bool:
-    return any(
-        getattr(item, "constraint_name", None) == AIRCRAFT_REGISTRATION_UNIQUE_CONSTRAINT
-        for item in _exception_chain(exc)
-    )
 
 
 def _row_to_aircraft(row: RowMapping) -> Aircraft:
@@ -43,6 +31,7 @@ def _row_to_aircraft(row: RowMapping) -> Aircraft:
         registration=AircraftRegistration(cast(str, row["registration"])),
         status=AircraftStatus(cast(str, row["status"])),
         created_at=cast(datetime, row["created_at"]),
+        retired_at=cast(datetime | None, row["retired_at"]),
     )
 
 
@@ -72,18 +61,34 @@ class SqlAlchemyAircraftRepository:
             registration=aircraft.registration.value,
             status=aircraft.status.value,
             created_at=aircraft.created_at,
+            retired_at=aircraft.retired_at,
         )
 
         try:
             await self._session.execute(statement)
         except IntegrityError as exc:
-            if _is_registration_unique_violation(exc):
+            if is_named_constraint_violation(
+                exc,
+                AIRCRAFT_REGISTRATION_UNIQUE_CONSTRAINT,
+            ):
                 raise AircraftRegistrationConflict(aircraft.registration) from exc
             raise
 
     async def get_by_id(self, aircraft_id: UUID) -> Aircraft | None:
         """Return one rehydrated Aircraft by identifier."""
         statement = select(aircraft_table).where(aircraft_table.c.id == aircraft_id)
+        result = await self._session.execute(statement)
+        row = result.mappings().one_or_none()
+        return None if row is None else _row_to_aircraft(row)
+
+    async def get_for_equipment_registration(
+        self,
+        aircraft_id: UUID,
+    ) -> Aircraft | None:
+        """Lock one aircraft row while equipment registration is decided."""
+        statement = (
+            select(aircraft_table).where(aircraft_table.c.id == aircraft_id).with_for_update()
+        )
         result = await self._session.execute(statement)
         row = result.mappings().one_or_none()
         return None if row is None else _row_to_aircraft(row)
@@ -107,3 +112,27 @@ class SqlAlchemyAircraftRepository:
         statement = select(func.count()).select_from(aircraft_table)
         result = await self._session.execute(statement)
         return int(result.scalar_one())
+
+    async def update_retirement(self, aircraft: Aircraft) -> None:
+        """Persist one conditional ACTIVE -> RETIRED transition."""
+        if aircraft.status is not AircraftStatus.RETIRED or aircraft.retired_at is None:
+            raise ValueError("retirement persistence requires a retired aircraft")
+
+        statement = (
+            update(aircraft_table)
+            .where(
+                aircraft_table.c.id == aircraft.id,
+                aircraft_table.c.status == AircraftStatus.ACTIVE.value,
+                aircraft_table.c.retired_at.is_(None),
+            )
+            .values(
+                status=AircraftStatus.RETIRED.value,
+                retired_at=aircraft.retired_at,
+            )
+        )
+        result = cast(
+            CursorResult[Any],
+            await self._session.execute(statement),
+        )
+        if result.rowcount != 1:
+            raise AircraftRetirementConflict(aircraft.id)

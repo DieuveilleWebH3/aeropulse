@@ -1,7 +1,7 @@
 [project]
 name = "aeropulse"
 version = "0.1.0"
-description = "Predictive Maintenance and Fleet Health Monitoring Platform"
+description = "Production-oriented aircraft predictive maintenance and fleet health monitoring platform"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -15,6 +15,10 @@ dependencies = [
     "sqlalchemy[asyncio]>=2.1.6,<2.2",
     "uvicorn>=0.54.0,<0.55",
 ]
+
+[project.urls]
+Repository = "https://github.com/DieuveilleWebH3/aeropulse"
+Issues = "https://github.com/DieuveilleWebH3/aeropulse/issues"
 
 [dependency-groups]
 dev = [

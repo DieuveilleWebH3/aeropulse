@@ -43,18 +43,21 @@ async def seed_aircraft() -> None:
                         "registration": "R-001",
                         "status": "active",
                         "created_at": base_time,
+                        "retired_at": None,
                     },
                     {
                         "id": IDS[1],
                         "registration": "R-002",
                         "status": "retired",
                         "created_at": base_time + timedelta(minutes=1),
+                        "retired_at": base_time + timedelta(days=1),
                     },
                     {
                         "id": IDS[2],
                         "registration": "R-003",
                         "status": "active",
                         "created_at": base_time + timedelta(minutes=2),
+                        "retired_at": None,
                     },
                 ],
             )
@@ -87,6 +90,7 @@ def test_repository_get_by_id_rehydrates_persisted_status() -> None:
             assert aircraft.id == IDS[1]
             assert aircraft.registration.value == "R-002"
             assert aircraft.status is AircraftStatus.RETIRED
+            assert aircraft.retired_at == datetime(2000, 1, 2, 0, 0, tzinfo=UTC)
         finally:
             await engine.dispose()
             await cleanup_aircraft()

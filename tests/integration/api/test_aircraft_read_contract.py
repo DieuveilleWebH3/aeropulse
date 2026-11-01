@@ -163,6 +163,7 @@ def test_list_aircraft_returns_page_contract(test_settings: Settings) -> None:
                 "registration": "F-HABC",
                 "status": "active",
                 "created_at": "2026-11-01T10:00:00Z",
+                "retired_at": None,
             }
         ],
         "total": 17,
