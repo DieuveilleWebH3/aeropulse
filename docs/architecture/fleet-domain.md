@@ -262,3 +262,25 @@ uv run --locked pytest
 
 all pass, CI is green, and there is no FastAPI/SQLAlchemy/Redis/AWS import inside
 `aeropulse.fleet.domain` or `aeropulse.fleet.application`.
+
+
+## Persistence Implementation
+
+S1-002 implements `AircraftRepository` in:
+
+```text
+aeropulse.fleet.infrastructure.persistence
+```
+
+The adapter uses SQLAlchemy Core and PostgreSQL while keeping domain/application modules free of
+SQLAlchemy imports.
+
+Registration uniqueness now has two layers:
+
+```text
+application pre-check
+        +
+PostgreSQL UNIQUE constraint
+```
+
+The first provides useful business behavior; the second protects integrity under concurrency.

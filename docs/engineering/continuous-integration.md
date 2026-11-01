@@ -265,6 +265,22 @@ Source mutation belongs to the developer/agent workspace before a PR is submitte
 
 CI reports drift; it does not rewrite the branch.
 
+
+### Database migration gate
+
+Fleet persistence introduces Alembic schema management.
+
+Before pytest, CI now runs:
+
+```bash
+uv run --locked --group migration alembic upgrade head
+uv run --locked --group migration alembic check
+```
+
+The first command proves a clean PostgreSQL service can reach the current migration head.
+
+The second detects metadata changes that were not represented by a migration revision.
+
 ## 12. Test Gate
 
 The pytest command inherits S0-004's repository configuration, including:

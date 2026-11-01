@@ -7,7 +7,7 @@ from uuid import UUID, uuid4
 from aeropulse.fleet.application.commands import RegisterAircraftCommand
 from aeropulse.fleet.application.errors import AircraftRegistrationAlreadyExists
 from aeropulse.fleet.domain.aircraft import Aircraft
-from aeropulse.fleet.domain.repositories import AircraftRepository
+from aeropulse.fleet.domain.repositories import AircraftRegistrationConflict, AircraftRepository
 from aeropulse.fleet.domain.value_objects import AircraftRegistration
 
 type AircraftIdGenerator = Callable[[], UUID]
@@ -45,5 +45,9 @@ class RegisterAircraftHandler:
             registration=registration,
             created_at=self._clock(),
         )
-        await self._repository.add(aircraft)
+        try:
+            await self._repository.add(aircraft)
+        except AircraftRegistrationConflict as exc:
+            raise AircraftRegistrationAlreadyExists(registration) from exc
+
         return aircraft

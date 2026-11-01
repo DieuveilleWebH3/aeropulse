@@ -12,6 +12,7 @@ from aeropulse.fleet.application.errors import AircraftRegistrationAlreadyExists
 from aeropulse.fleet.application.register_aircraft import RegisterAircraftHandler
 from aeropulse.fleet.domain.aircraft import Aircraft, AircraftStatus
 from aeropulse.fleet.domain.errors import InvalidAircraftRegistration
+from aeropulse.fleet.domain.repositories import AircraftRegistrationConflict
 from aeropulse.fleet.domain.value_objects import AircraftRegistration
 
 AIRCRAFT_ID = UUID("22222222-2222-4222-8222-222222222222")
@@ -86,5 +87,30 @@ def test_invalid_registration_is_rejected_before_repository_lookup() -> None:
 
         with pytest.raises(InvalidAircraftRegistration):
             await handler.handle(RegisterAircraftCommand(registration="   "))
+
+    asyncio.run(scenario())
+
+
+def test_register_aircraft_translates_late_persistence_conflict() -> None:
+    class ConcurrentConflictRepository:
+        async def exists_by_registration(self, registration: AircraftRegistration) -> bool:
+            del registration
+            return False
+
+        async def add(self, aircraft: Aircraft) -> None:
+            raise AircraftRegistrationConflict(aircraft.registration)
+
+    async def scenario() -> None:
+        handler = RegisterAircraftHandler(
+            ConcurrentConflictRepository(),
+            id_generator=lambda: AIRCRAFT_ID,
+            clock=lambda: NOW,
+        )
+
+        with pytest.raises(
+            AircraftRegistrationAlreadyExists,
+            match="F-HABC",
+        ):
+            await handler.handle(RegisterAircraftCommand(registration="F-HABC"))
 
     asyncio.run(scenario())

@@ -4,7 +4,7 @@
 
 AeroPulse is an engineering portfolio project demonstrating the design of a production-oriented predictive-maintenance platform with Python, FastAPI, event-driven processing, data engineering, observability, security, testing, and cloud infrastructure.
 
-> Current status: **Sprint 1 — Fleet & Asset Management**
+> Current status: **Sprint 1 — Fleet persistence**
 
 ## Current bootstrap
 
@@ -37,8 +37,8 @@ Current domain guarantees include:
 - aircraft registration is read-only after creation;
 - duplicate registration is represented as an application-level business error.
 
-Persistence is intentionally deferred to **S1-002**, where PostgreSQL/Alembic will implement the
-repository port and enforce registration uniqueness with a database constraint.
+S1-002 now persists aircraft through PostgreSQL/SQLAlchemy, versions the schema with Alembic,
+and enforces canonical registration uniqueness with a database constraint.
 
 ### Prerequisites
 
@@ -84,6 +84,26 @@ Start PostgreSQL and Redis:
 ```bash
 docker compose up -d
 docker compose ps
+```
+
+### Database migrations
+
+Install migration tooling with the project environment:
+
+```bash
+uv sync --locked --group migration
+```
+
+Apply the current schema:
+
+```bash
+uv run --locked --group migration alembic upgrade head
+```
+
+Verify metadata and migration history remain aligned:
+
+```bash
+uv run --locked --group migration alembic check
 ```
 
 ### Run the API
@@ -147,6 +167,7 @@ uv build
 - [FastAPI application bootstrap](docs/engineering/fastapi-application-bootstrap.md)
 - [Local runtime dependencies](docs/engineering/local-runtime-dependencies.md)
 - [Fleet domain — aircraft registration](docs/architecture/fleet-domain.md)
+- [Fleet persistence](docs/architecture/fleet-persistence.md)
 
 ## Foundation roadmap
 
@@ -161,7 +182,7 @@ uv build
 ## Sprint 1 — Fleet & Asset Management
 
 - [x] S1-001 — Aircraft domain model and registration use case
-- [ ] S1-002 — PostgreSQL aircraft persistence and Alembic
+- [x] S1-002 — PostgreSQL aircraft persistence and Alembic
 - [ ] S1-003 — Aircraft registration HTTP API
 - [ ] S1-004 — Retrieve and list aircraft
 - [ ] S1-005 — Aircraft lifecycle / retirement
