@@ -4,11 +4,41 @@
 
 AeroPulse is an engineering portfolio project demonstrating the design of a production-oriented predictive-maintenance platform with Python, FastAPI, event-driven processing, data engineering, observability, security, testing, and cloud infrastructure.
 
-> Current status: **Sprint 0 — FastAPI runtime bootstrap**
+> Current status: **Sprint 1 — Fleet & Asset Management**
 
 ## Current bootstrap
 
-The repository now includes the first FastAPI runtime slice with validated settings, application lifespan management, and operational liveness/readiness probes.
+The engineering foundation is complete and AeroPulse has entered its first business sprint. The current implementation includes FastAPI, PostgreSQL, Redis, dynamic liveness/readiness, and the first Fleet domain capability: aircraft registration.
+
+## Current business capability
+
+### Aircraft registration domain
+
+Sprint 1 introduces the first Fleet bounded-context use case:
+
+```text
+RegisterAircraftCommand
+        ↓
+AircraftRegistration validation / normalization
+        ↓
+duplicate-registration check
+        ↓
+Aircraft aggregate creation
+        ↓
+AircraftRepository port
+```
+
+Current domain guarantees include:
+
+- canonical uppercase aircraft registrations;
+- explicit V1 registration validation;
+- new aircraft start in `ACTIVE` state;
+- timezone-aware creation timestamps normalized to UTC;
+- aircraft registration is read-only after creation;
+- duplicate registration is represented as an application-level business error.
+
+Persistence is intentionally deferred to **S1-002**, where PostgreSQL/Alembic will implement the
+repository port and enforce registration uniqueness with a database constraint.
 
 ### Prerequisites
 
@@ -39,6 +69,21 @@ Expected:
 
 ```text
 aeropulse
+```
+
+### Start local dependencies
+
+Create a local environment file:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Start PostgreSQL and Redis:
+
+```bash
+docker compose up -d
+docker compose ps
 ```
 
 ### Run the API
@@ -100,6 +145,8 @@ uv build
 - [Code quality and testing](docs/engineering/quality-and-testing.md)
 - [Continuous integration](docs/engineering/continuous-integration.md)
 - [FastAPI application bootstrap](docs/engineering/fastapi-application-bootstrap.md)
+- [Local runtime dependencies](docs/engineering/local-runtime-dependencies.md)
+- [Fleet domain — aircraft registration](docs/architecture/fleet-domain.md)
 
 ## Foundation roadmap
 
@@ -109,4 +156,15 @@ uv build
 - [x] S0-004 — Code quality and test toolchain
 - [x] S0-005 — Minimal GitHub Actions CI
 - [x] S0-006 — FastAPI application with `/health` and `/ready`
-- [ ] S0-007 — Local dependencies and Docker Compose
+- [x] S0-007 — Local dependencies and Docker Compose
+
+## Sprint 1 — Fleet & Asset Management
+
+- [x] S1-001 — Aircraft domain model and registration use case
+- [ ] S1-002 — PostgreSQL aircraft persistence and Alembic
+- [ ] S1-003 — Aircraft registration HTTP API
+- [ ] S1-004 — Retrieve and list aircraft
+- [ ] S1-005 — Aircraft lifecycle / retirement
+- [ ] S1-006 — Equipment domain and persistence
+- [ ] S1-007 — Equipment HTTP API
+- [ ] S1-008 — Fleet integration and E2E validation
