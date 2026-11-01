@@ -57,7 +57,8 @@ class AircraftRepository:
 
 
 class EquipmentRepository:
-    def __init__(self) -> None:
+    def __init__(self, result: Equipment | None = None) -> None:
+        self.result = result
         self.list_args: tuple[UUID, int, int] | None = None
 
     async def get_by_id(self, equipment_id: UUID) -> Equipment | None:
@@ -71,7 +72,7 @@ class EquipmentRepository:
         offset: int,
     ) -> list[Equipment]:
         self.list_args = (aircraft_id, limit, offset)
-        return [equipment()]
+        return [] if self.result is None else [self.result]
 
     async def count_by_aircraft(self, aircraft_id: UUID) -> int:
         assert aircraft_id == AIRCRAFT_ID
@@ -80,7 +81,8 @@ class EquipmentRepository:
 
 def test_list_equipment_returns_page_for_existing_aircraft() -> None:
     async def scenario() -> None:
-        equipment_repository = EquipmentRepository()
+        expected = equipment()
+        equipment_repository = EquipmentRepository(expected)
         handler = ListEquipmentHandler(
             equipment_repository,
             AircraftRepository(aircraft()),
@@ -94,7 +96,8 @@ def test_list_equipment_returns_page_for_existing_aircraft() -> None:
             )
         )
 
-        assert page.items == (equipment(),)
+        assert page.items == (expected,)
+        assert page.items[0] is expected
         assert page.total == 1
         assert page.limit == 25
         assert page.offset == 5

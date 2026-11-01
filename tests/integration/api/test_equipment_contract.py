@@ -1,7 +1,9 @@
 """HTTP contract tests for Equipment endpoints without external services."""
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
 import pytest
@@ -93,7 +95,7 @@ def settings() -> Settings:
 
 def client_with_override(
     settings: Settings,
-    dependency: object,
+    dependency: Callable[..., Any],
     handler: StubHandler,
 ) -> TestClient:
     app = create_app(
