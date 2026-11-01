@@ -6,7 +6,7 @@ AeroPulse is a production-oriented aircraft Prognostics and Health Management (P
 
 > AeroPulse uses public or synthetic data and does not claim certified airworthiness or maintenance-decision authority.
 
-> Current status: **Sprint 1 — Equipment Domain & Persistence**
+> Current status: **Sprint 1 — Equipment HTTP API**
 
 
 ## Project governance
@@ -78,7 +78,7 @@ A physical equipment identity is unique by `(part_number, serial_number)`. The
 registration use case locks the target aircraft row before validating lifecycle state,
 so concurrent aircraft retirement cannot race with equipment attachment.
 
-HTTP exposure is intentionally deferred to S1-007.
+S1-007 exposes Equipment registration, retrieval, and per-aircraft listing through FastAPI.
 
 ### Prerequisites
 
@@ -317,6 +317,63 @@ status = retired
 retired_at = <utc timestamp>
 ```
 
+### Equipment API
+
+#### Windows PowerShell
+
+Register Equipment against an active Aircraft:
+
+```powershell
+$fleet = Invoke-RestMethod `
+    -Uri "http://127.0.0.1:8000/api/v1/aircraft?limit=50&offset=0"
+
+$aircraftId = $fleet.items[0].id
+
+$equipmentBody = @{
+    equipment_type = "engine-control"
+    part_number = "PN-ab/01"
+    serial_number = "Sn-00a"
+} | ConvertTo-Json
+
+$equipment = Invoke-RestMethod `
+    -Uri "http://127.0.0.1:8000/api/v1/aircraft/$aircraftId/equipment" `
+    -Method Post `
+    -ContentType "application/json" `
+    -Body $equipmentBody
+
+$equipment
+```
+
+Retrieve it:
+
+```powershell
+$equipmentId = $equipment.id
+
+Invoke-RestMethod `
+    -Uri "http://127.0.0.1:8000/api/v1/equipment/$equipmentId"
+```
+
+List Equipment for the Aircraft:
+
+```powershell
+Invoke-RestMethod `
+    -Uri "http://127.0.0.1:8000/api/v1/aircraft/$aircraftId/equipment?limit=50&offset=0"
+```
+
+#### Bash / Git Bash / WSL
+
+```bash
+AIRCRAFT_ID="replace-with-a-real-aircraft-uuid"
+
+curl -i -X POST   "http://127.0.0.1:8000/api/v1/aircraft/${AIRCRAFT_ID}/equipment"   -H "Content-Type: application/json"   -d '{
+    "equipment_type":"engine-control",
+    "part_number":"PN-ab/01",
+    "serial_number":"Sn-00a"
+  }'
+
+curl -i   "http://127.0.0.1:8000/api/v1/aircraft/${AIRCRAFT_ID}/equipment?limit=50&offset=0"
+```
+
 ### Quality checks
 
 ```bash
@@ -390,7 +447,7 @@ uv build
 - [x] S1-004 — Retrieve and list aircraft
 - [x] S1-005 — Aircraft lifecycle / retirement
 - [x] S1-006 — Equipment domain and persistence
-- [ ] S1-007 — Equipment HTTP API
+- [x] S1-007 — Equipment HTTP API
 - [ ] S1-008 — Fleet integration and E2E validation
 
 ## License

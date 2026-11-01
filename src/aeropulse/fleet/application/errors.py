@@ -48,3 +48,11 @@ class AircraftRetiredForEquipmentRegistration(FleetApplicationError):
     def __init__(self, aircraft_id: UUID) -> None:
         self.aircraft_id = aircraft_id
         super().__init__(f"cannot register equipment on retired aircraft: {aircraft_id}")
+
+
+class EquipmentNotFound(FleetApplicationError):
+    """Raised when an equipment identifier does not exist."""
+
+    def __init__(self, equipment_id: UUID) -> None:
+        self.equipment_id = equipment_id
+        super().__init__(f"equipment not found: {equipment_id}")
