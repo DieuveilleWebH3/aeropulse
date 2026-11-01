@@ -1,8 +1,10 @@
 [project]
 name = "aeropulse"
 version = "0.1.0"
-description = "Predictive Maintenance and Fleet Health Monitoring Platform"
+description = "Production-oriented aircraft predictive maintenance and fleet health monitoring platform"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.14,<3.15"
 dependencies = [
     "asyncpg>=0.32.0,<0.33",
@@ -14,14 +16,21 @@ dependencies = [
     "uvicorn>=0.54.0,<0.55",
 ]
 
+[project.urls]
+Repository = "https://github.com/DieuveilleWebH3/aeropulse"
+Issues = "https://github.com/DieuveilleWebH3/aeropulse/issues"
+
 [dependency-groups]
 dev = [
-    "httpx>=0.28.1,<0.29",
+    "httpx2>=2.16.0,<3",
     "mypy>=2.4.1,<2.5",
     "pre-commit>=4.7.0,<5",
     "pytest>=9.2.0,<10",
     "pytest-cov>=7.1.0,<8",
     "ruff>=0.17.3,<0.18",
+]
+migration = [
+    "alembic>=1.20.1,<1.21",
 ]
 
 [build-system]
@@ -69,8 +78,12 @@ minversion = "9.2"
 testpaths = ["tests"]
 addopts = "-ra --strict-config --strict-markers --cov=aeropulse --cov-report=term-missing:skip-covered --cov-fail-under=90"
 xfail_strict = true
+filterwarnings = [
+    "error::starlette.exceptions.StarletteDeprecationWarning",
+]
 markers = [
     "external_services: requires live PostgreSQL and Redis services",
+    "e2e: exercises a complete user-visible workflow through the assembled application",
 ]
 
 [tool.coverage.run]

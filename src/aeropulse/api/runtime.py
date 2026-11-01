@@ -3,11 +3,17 @@
 from collections.abc import Callable
 from typing import Protocol
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from aeropulse.settings import Settings
 
 
 class RuntimeResources(Protocol):
-    """Lifecycle and readiness contract for application-wide technical resources."""
+    """Lifecycle and dependency contract for application-wide technical resources."""
+
+    def create_database_session(self) -> AsyncSession:
+        """Create one caller-owned database session."""
+        ...
 
     async def is_ready(self) -> bool:
         """Return whether all critical runtime dependencies are currently ready."""

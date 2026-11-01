@@ -1,0 +1,21 @@
+AeroPulse GitHub About
+
+Description:
+Production-oriented aircraft PHM platform for predictive maintenance, fleet health, telemetry, anomaly detection, reliability, security, and cloud engineering.
+
+Topics:
+python
+fastapi
+predictive-maintenance
+prognostics-health-management
+aircraft-maintenance
+fleet-management
+data-engineering
+event-driven-architecture
+postgresql
+sqlalchemy
+alembic
+redis
+aws
+observability
+testing

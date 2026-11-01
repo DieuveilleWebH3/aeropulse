@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from aeropulse.api.app import create_app
 from aeropulse.settings import Environment, Settings
@@ -13,6 +14,9 @@ from aeropulse.settings import Environment, Settings
 class FakeRuntimeResources:
     ready: bool = True
     closed: bool = False
+
+    def create_database_session(self) -> AsyncSession:
+        raise AssertionError("database session must not be requested by system endpoint tests")
 
     async def is_ready(self) -> bool:
         return self.ready
@@ -144,3 +148,48 @@ def test_application_factory_can_load_environment_settings(
     app = create_app()
 
     assert app.title == "AeroPulse From Environment"
+
+
+def test_api_documentation_surfaces_are_available(
+    test_settings: Settings,
+) -> None:
+    resources = FakeRuntimeResources()
+    app = create_app(test_settings, runtime_resources_factory=lambda _: resources)
+
+    with TestClient(app) as client:
+        swagger_response = client.get("/docs")
+        redoc_response = client.get("/redoc")
+        openapi_response = client.get("/openapi.json")
+
+    assert swagger_response.status_code == 200
+    assert "swagger-ui" in swagger_response.text.lower()
+
+    assert redoc_response.status_code == 200
+    assert "redoc" in redoc_response.text.lower()
+
+    assert openapi_response.status_code == 200
+    assert openapi_response.headers["content-type"].startswith("application/json")
+
+
+def test_openapi_metadata_describes_aeropulse_and_orders_fleet_tags(
+    test_settings: Settings,
+) -> None:
+    resources = FakeRuntimeResources()
+    app = create_app(test_settings, runtime_resources_factory=lambda _: resources)
+
+    with TestClient(app) as client:
+        schema = client.get("/openapi.json").json()
+
+    assert schema["info"]["title"] == "AeroPulse Test"
+    assert schema["info"]["summary"] == (
+        "Aircraft predictive maintenance and fleet health engineering platform"
+    )
+    assert schema["info"]["license"] == {
+        "name": "MIT",
+        "identifier": "MIT",
+    }
+    assert [tag["name"] for tag in schema["tags"]] == [
+        "aircraft",
+        "equipment",
+    ]
+    assert "certified" in schema["info"]["description"].lower()
