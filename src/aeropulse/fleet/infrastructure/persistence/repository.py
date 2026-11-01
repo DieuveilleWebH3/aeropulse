@@ -1,6 +1,5 @@
 """SQLAlchemy implementation of Fleet aircraft repository ports."""
 
-from collections.abc import Iterator
 from datetime import datetime
 from typing import Any, cast
 from uuid import UUID
@@ -16,27 +15,13 @@ from aeropulse.fleet.domain.repositories import (
     AircraftRetirementConflict,
 )
 from aeropulse.fleet.domain.value_objects import AircraftRegistration
+from aeropulse.fleet.infrastructure.persistence.constraint_errors import (
+    is_named_constraint_violation,
+)
 from aeropulse.fleet.infrastructure.persistence.schema import (
     AIRCRAFT_REGISTRATION_UNIQUE_CONSTRAINT,
     aircraft_table,
 )
-
-
-def _exception_chain(exc: BaseException) -> Iterator[BaseException]:
-    current: BaseException | None = exc
-    seen: set[int] = set()
-
-    while current is not None and id(current) not in seen:
-        seen.add(id(current))
-        yield current
-        current = current.__cause__ or current.__context__
-
-
-def _is_registration_unique_violation(exc: IntegrityError) -> bool:
-    return any(
-        getattr(item, "constraint_name", None) == AIRCRAFT_REGISTRATION_UNIQUE_CONSTRAINT
-        for item in _exception_chain(exc)
-    )
 
 
 def _row_to_aircraft(row: RowMapping) -> Aircraft:
@@ -82,13 +67,28 @@ class SqlAlchemyAircraftRepository:
         try:
             await self._session.execute(statement)
         except IntegrityError as exc:
-            if _is_registration_unique_violation(exc):
+            if is_named_constraint_violation(
+                exc,
+                AIRCRAFT_REGISTRATION_UNIQUE_CONSTRAINT,
+            ):
                 raise AircraftRegistrationConflict(aircraft.registration) from exc
             raise
 
     async def get_by_id(self, aircraft_id: UUID) -> Aircraft | None:
         """Return one rehydrated Aircraft by identifier."""
         statement = select(aircraft_table).where(aircraft_table.c.id == aircraft_id)
+        result = await self._session.execute(statement)
+        row = result.mappings().one_or_none()
+        return None if row is None else _row_to_aircraft(row)
+
+    async def get_for_equipment_registration(
+        self,
+        aircraft_id: UUID,
+    ) -> Aircraft | None:
+        """Lock one aircraft row while equipment registration is decided."""
+        statement = (
+            select(aircraft_table).where(aircraft_table.c.id == aircraft_id).with_for_update()
+        )
         result = await self._session.execute(statement)
         row = result.mappings().one_or_none()
         return None if row is None else _row_to_aircraft(row)

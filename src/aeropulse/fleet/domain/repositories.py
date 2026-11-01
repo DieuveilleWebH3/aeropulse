@@ -4,7 +4,12 @@ from typing import Protocol
 from uuid import UUID
 
 from aeropulse.fleet.domain.aircraft import Aircraft
-from aeropulse.fleet.domain.value_objects import AircraftRegistration
+from aeropulse.fleet.domain.equipment import Equipment
+from aeropulse.fleet.domain.value_objects import (
+    AircraftRegistration,
+    EquipmentPartNumber,
+    EquipmentSerialNumber,
+)
 
 
 class AircraftRegistrationConflict(Exception):
@@ -70,3 +75,62 @@ class AircraftLifecycleRepository(Protocol):
             AircraftRetirementConflict: if the persisted aircraft is no longer ACTIVE.
         """
         ...
+
+
+class EquipmentIdentityConflict(Exception):
+    """Raised when persistence cannot preserve equipment natural identity."""
+
+    def __init__(
+        self,
+        part_number: EquipmentPartNumber,
+        serial_number: EquipmentSerialNumber,
+    ) -> None:
+        self.part_number = part_number
+        self.serial_number = serial_number
+        super().__init__(
+            f"equipment identity conflicts with persisted data: {part_number}/{serial_number}"
+        )
+
+
+class AircraftEquipmentRegistrationRepository(Protocol):
+    """Aircraft access needed while registering equipment."""
+
+    async def get_for_equipment_registration(self, aircraft_id: UUID) -> Aircraft | None:
+        """Return and lock an aircraft row for equipment-registration serialization."""
+        ...
+
+
+class EquipmentRepository(Protocol):
+    """Persistence contract required by equipment-registration use cases."""
+
+    async def exists_by_identity(
+        self,
+        part_number: EquipmentPartNumber,
+        serial_number: EquipmentSerialNumber,
+    ) -> bool:
+        """Return whether the part-number/serial-number pair already exists."""
+        ...
+
+    async def add(self, equipment: Equipment) -> None:
+        """Persist newly registered equipment.
+
+        Raises:
+            EquipmentIdentityConflict: if a competing insert wins the identity race.
+        """
+        ...
+
+
+class EquipmentReadRepository(Protocol):
+    """Read contract prepared for the S1-007 Equipment HTTP API."""
+
+    async def get_by_id(self, equipment_id: UUID) -> Equipment | None: ...
+
+    async def list_by_aircraft(
+        self,
+        aircraft_id: UUID,
+        *,
+        limit: int,
+        offset: int,
+    ) -> list[Equipment]: ...
+
+    async def count_by_aircraft(self, aircraft_id: UUID) -> int: ...

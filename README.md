@@ -2,9 +2,20 @@
 
 **Predictive Maintenance & Fleet Health Monitoring Platform**
 
-AeroPulse is an engineering portfolio project demonstrating the design of a production-oriented predictive-maintenance platform with Python, FastAPI, event-driven processing, data engineering, observability, security, testing, and cloud infrastructure.
+AeroPulse is a production-oriented aircraft Prognostics and Health Management (PHM) engineering demonstrator. It models aircraft and maintainable equipment today and is designed to grow toward telemetry ingestion, fleet-health scoring, anomaly detection, degradation/RUL workflows, human-approved maintenance recommendations, reliable event processing, observability, security, and cloud deployment.
 
-> Current status: **Sprint 1 — Aircraft Lifecycle / Retirement**
+> AeroPulse uses public or synthetic data and does not claim certified airworthiness or maintenance-decision authority.
+
+> Current status: **Sprint 1 — Equipment Domain & Persistence**
+
+
+## Project governance
+
+- [Security policy](SECURITY.md)
+- [Contributing guidelines](CONTRIBUTING.md)
+- [Code of conduct](CODE_OF_CONDUCT.md)
+- [MIT license](LICENSE)
+- [GitHub repository profile](docs/github/repository-profile.md)
 
 ## Current bootstrap
 
@@ -47,6 +58,27 @@ POST /api/v1/aircraft
 ```
 
 with transaction-scoped persistence and stable `409` / `422` business error contracts.
+
+
+### Equipment domain and persistence
+
+S1-006 adds the next Fleet aggregate without exposing HTTP yet:
+
+```text
+Aircraft (ACTIVE)
+    ↓ owns
+Equipment
+    ├── equipment_type
+    ├── part_number
+    ├── serial_number
+    └── created_at
+```
+
+A physical equipment identity is unique by `(part_number, serial_number)`. The
+registration use case locks the target aircraft row before validating lifecycle state,
+so concurrent aircraft retirement cannot race with equipment attachment.
+
+HTTP exposure is intentionally deferred to S1-007.
 
 ### Prerequisites
 
@@ -123,13 +155,15 @@ S1-004 ends at migration:
 
 which normalizes the historical aircraft-status check-constraint name.
 
-After S1-005, the expected Alembic head is:
+S1-005 ends at migration `20261101_0004`, which adds aircraft retirement persistence.
+
+After S1-006, the expected Alembic head is:
 
 ```text
-20261101_0004
+20261101_0005
 ```
 
-which adds aircraft retirement persistence and lifecycle consistency protection.
+which adds the Equipment table, Aircraft foreign key, equipment natural-identity uniqueness, and deterministic listing index.
 
 ### Run the API
 
@@ -335,6 +369,8 @@ uv build
 - [Fleet aircraft registration HTTP API](docs/architecture/fleet-http-api.md)
 - [Fleet aircraft read API](docs/architecture/fleet-read-api.md)
 - [Fleet aircraft lifecycle](docs/architecture/fleet-lifecycle.md)
+- [Equipment domain & persistence](docs/architecture/equipment-domain-persistence.md)
+- [GitHub repository profile](docs/github/repository-profile.md)
 
 ## Foundation roadmap
 
@@ -353,7 +389,7 @@ uv build
 - [x] S1-003 — Aircraft registration HTTP API
 - [x] S1-004 — Retrieve and list aircraft
 - [x] S1-005 — Aircraft lifecycle / retirement
-- [ ] S1-006 — Equipment domain and persistence
+- [x] S1-006 — Equipment domain and persistence
 - [ ] S1-007 — Equipment HTTP API
 - [ ] S1-008 — Fleet integration and E2E validation
 
