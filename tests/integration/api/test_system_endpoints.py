@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from aeropulse.api.app import create_app
 from aeropulse.settings import Environment, Settings
@@ -13,6 +14,9 @@ from aeropulse.settings import Environment, Settings
 class FakeRuntimeResources:
     ready: bool = True
     closed: bool = False
+
+    def create_database_session(self) -> AsyncSession:
+        raise AssertionError("database session must not be requested by system endpoint tests")
 
     async def is_ready(self) -> bool:
         return self.ready

@@ -24,9 +24,9 @@ jobs:
       postgres:
         image: postgres:18.6-alpine
         env:
-          POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_DB: aeropulse
           POSTGRES_USER: aeropulse
+          POSTGRES_HOST_AUTH_METHOD: trust
         ports:
           - 5432:5432
         options: >-
@@ -72,7 +72,7 @@ jobs:
         run: uv lock --check
 
       - name: Sync project
-        run: uv sync --locked --group dev
+        run: uv sync --locked --group dev --group migration
 
       - name: Verify Python runtime
         run: >-
@@ -87,6 +87,12 @@ jobs:
 
       - name: Type check
         run: uv run --locked mypy
+
+      - name: Apply database migrations
+        run: uv run --locked --group migration alembic upgrade head
+
+      - name: Check migration drift
+        run: uv run --locked --group migration alembic check
 
       - name: Test
         run: uv run --locked pytest

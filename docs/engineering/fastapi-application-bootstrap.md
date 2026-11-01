@@ -30,7 +30,7 @@ pydantic-settings
 Uvicorn
 ```
 
-`httpx` is a development dependency because FastAPI's `TestClient` uses HTTPX.
+`httpx2` is a development dependency because Starlette's current `TestClient`, re-exported by FastAPI, uses HTTPX2. Legacy `httpx` support is deprecated and is not installed by AeroPulse.
 
 Dependencies are declared directly when AeroPulse imports or invokes them. Transitive dependencies
 are not treated as implicit project APIs.
@@ -60,6 +60,34 @@ The development server is started with Uvicorn's factory mode:
 ```bash
 uv run --locked uvicorn aeropulse.api.app:create_app --factory
 ```
+
+
+## TestClient HTTP Client Dependency
+
+AeroPulse uses:
+
+```python
+from fastapi.testclient import TestClient
+```
+
+The import remains unchanged.
+
+Modern Starlette implements `TestClient` on top of `httpx2`. Starlette still supports the old
+`httpx` package as a compatibility fallback, but that fallback emits
+`StarletteDeprecationWarning`.
+
+AeroPulse therefore declares:
+
+```toml
+httpx2>=2.16.0,<3
+```
+
+in the development dependency group and does not declare legacy `httpx`.
+
+Pytest treats `StarletteDeprecationWarning` as an error. This ensures a future dependency change
+cannot silently move the test suite back onto a deprecated compatibility path.
+
+After changing this dependency, regenerate and commit `uv.lock`.
 
 ## 4. Configuration
 

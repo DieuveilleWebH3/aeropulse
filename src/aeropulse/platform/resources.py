@@ -10,7 +10,12 @@ from redis.asyncio import Redis
 from redis.exceptions import RedisError
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 from aeropulse.settings import Settings
 
@@ -95,6 +100,11 @@ class ApplicationResources:
 
     postgres: PostgresResource
     redis: RedisResource
+    database_session_factory: async_sessionmaker[AsyncSession]
+
+    def create_database_session(self) -> AsyncSession:
+        """Create a short-lived database session for one application unit of work."""
+        return self.database_session_factory()
 
     async def is_ready(self) -> bool:
         """Check critical dependencies concurrently."""
@@ -121,6 +131,10 @@ def create_runtime_resources(settings: Settings) -> ApplicationResources:
         pool_pre_ping=True,
         connect_args={"timeout": timeout},
     )
+    database_session_factory = async_sessionmaker(
+        engine,
+        expire_on_commit=False,
+    )
     redis_client: Redis = Redis.from_url(
         settings.redis_url.get_secret_value(),
         decode_responses=True,
@@ -131,4 +145,5 @@ def create_runtime_resources(settings: Settings) -> ApplicationResources:
     return ApplicationResources(
         postgres=PostgresResource(engine=cast(DatabaseEngine, engine)),
         redis=RedisResource(client=cast(RedisClient, redis_client)),
+        database_session_factory=database_session_factory,
     )
