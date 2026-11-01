@@ -218,6 +218,33 @@ These services have development/CI-only credentials and no production secrets.
 
 Their health checks must succeed before the quality steps execute.
 
+
+### Ephemeral PostgreSQL authentication
+
+The CI PostgreSQL service intentionally does not use a stored password.
+
+It uses:
+
+```yaml
+POSTGRES_HOST_AUTH_METHOD: trust
+```
+
+only inside the disposable GitHub-hosted runner. The corresponding CI database URL therefore
+contains no password.
+
+This is a CI-only exception. PostgreSQL `trust` authentication must not be copied into local,
+staging, or production deployment configuration.
+
+Why this approach is preferred here:
+
+- the database contains only disposable test data;
+- no long-lived credential exists to leak;
+- ordinary pull requests do not depend on GitHub Actions secrets;
+- fork pull requests remain testable;
+- secret scanners do not need to ignore a synthetic CI password.
+
+Real deployment/runtime secrets must use an appropriate secret manager rather than this pattern.
+
 ## 11. Non-Mutating CI
 
 CI never runs:
