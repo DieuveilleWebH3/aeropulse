@@ -102,6 +102,7 @@ def test_register_aircraft_returns_201_contract(test_settings: Settings) -> None
         "registration": "F-HABC",
         "status": "active",
         "created_at": "2026-11-01T10:00:00Z",
+        "retired_at": None,
     }
     assert handler.commands == [RegisterAircraftCommand(registration=" f-habc ")]
     assert resources.closed is True

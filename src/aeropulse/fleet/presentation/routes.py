@@ -5,7 +5,10 @@ from uuid import UUID
 
 from fastapi import APIRouter, Query, status
 
-from aeropulse.fleet.application.commands import RegisterAircraftCommand
+from aeropulse.fleet.application.commands import (
+    RegisterAircraftCommand,
+    RetireAircraftCommand,
+)
 from aeropulse.fleet.application.queries import (
     DEFAULT_AIRCRAFT_PAGE_SIZE,
     MAX_AIRCRAFT_PAGE_SIZE,
@@ -16,6 +19,7 @@ from aeropulse.fleet.presentation.dependencies import (
     GetAircraftHandlerDependency,
     ListAircraftHandlerDependency,
     RegisterAircraftHandlerDependency,
+    RetireAircraftHandlerDependency,
 )
 from aeropulse.fleet.presentation.schemas import (
     AircraftListResponse,
@@ -86,4 +90,23 @@ async def get_aircraft(
 ) -> AircraftResponse:
     """Return one aircraft by stable identifier."""
     aircraft = await handler.handle(GetAircraftQuery(aircraft_id=aircraft_id))
+    return AircraftResponse.from_domain(aircraft)
+
+
+@router.post(
+    "/aircraft/{aircraft_id}/retire",
+    response_model=AircraftResponse,
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "model": ApiErrorResponse,
+            "description": "Aircraft does not exist.",
+        },
+    },
+)
+async def retire_aircraft(
+    aircraft_id: UUID,
+    handler: RetireAircraftHandlerDependency,
+) -> AircraftResponse:
+    """Retire one aircraft idempotently."""
+    aircraft = await handler.handle(RetireAircraftCommand(aircraft_id=aircraft_id))
     return AircraftResponse.from_domain(aircraft)

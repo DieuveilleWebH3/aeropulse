@@ -10,6 +10,7 @@ from aeropulse.api.runtime import RuntimeResources
 from aeropulse.fleet.application.get_aircraft import GetAircraftHandler
 from aeropulse.fleet.application.list_aircraft import ListAircraftHandler
 from aeropulse.fleet.application.register_aircraft import RegisterAircraftHandler
+from aeropulse.fleet.application.retire_aircraft import RetireAircraftHandler
 from aeropulse.fleet.infrastructure.persistence.repository import SqlAlchemyAircraftRepository
 
 
@@ -51,6 +52,12 @@ def get_list_aircraft_handler(session: DatabaseSession) -> ListAircraftHandler:
     return ListAircraftHandler(repository)
 
 
+def get_retire_aircraft_handler(session: DatabaseSession) -> RetireAircraftHandler:
+    """Compose the retire-aircraft use case for one transaction."""
+    repository = SqlAlchemyAircraftRepository(session)
+    return RetireAircraftHandler(repository)
+
+
 type RegisterAircraftHandlerDependency = Annotated[
     RegisterAircraftHandler,
     Depends(get_register_aircraft_handler),
@@ -64,4 +71,10 @@ type GetAircraftHandlerDependency = Annotated[
 type ListAircraftHandlerDependency = Annotated[
     ListAircraftHandler,
     Depends(get_list_aircraft_handler),
+]
+
+
+type RetireAircraftHandlerDependency = Annotated[
+    RetireAircraftHandler,
+    Depends(get_retire_aircraft_handler),
 ]

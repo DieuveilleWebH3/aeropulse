@@ -1,6 +1,9 @@
 """Fleet application use cases."""
 
-from aeropulse.fleet.application.commands import RegisterAircraftCommand
+from aeropulse.fleet.application.commands import (
+    RegisterAircraftCommand,
+    RetireAircraftCommand,
+)
 from aeropulse.fleet.application.errors import (
     AircraftNotFound,
     AircraftRegistrationAlreadyExists,
@@ -13,6 +16,7 @@ from aeropulse.fleet.application.queries import (
     ListAircraftQuery,
 )
 from aeropulse.fleet.application.register_aircraft import RegisterAircraftHandler
+from aeropulse.fleet.application.retire_aircraft import RetireAircraftHandler
 
 __all__ = [
     "AircraftNotFound",
@@ -24,4 +28,6 @@ __all__ = [
     "ListAircraftQuery",
     "RegisterAircraftCommand",
     "RegisterAircraftHandler",
+    "RetireAircraftCommand",
+    "RetireAircraftHandler",
 ]

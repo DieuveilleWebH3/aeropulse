@@ -4,7 +4,7 @@
 
 AeroPulse is an engineering portfolio project demonstrating the design of a production-oriented predictive-maintenance platform with Python, FastAPI, event-driven processing, data engineering, observability, security, testing, and cloud infrastructure.
 
-> Current status: **Sprint 1 — Retrieve & List Aircraft**
+> Current status: **Sprint 1 — Aircraft Lifecycle / Retirement**
 
 ## Current bootstrap
 
@@ -115,14 +115,21 @@ uv run --locked --group migration alembic check
 ```
 
 
-After S1-004, the expected Alembic head is:
+S1-004 ends at migration:
 
 ```text
 20261101_0003
 ```
 
-This corrective migration normalizes the aircraft status check-constraint name used by PostgreSQL
-and SQLAlchemy metadata.
+which normalizes the historical aircraft-status check-constraint name.
+
+After S1-005, the expected Alembic head is:
+
+```text
+20261101_0004
+```
+
+which adds aircraft retirement persistence and lifecycle consistency protection.
 
 ### Run the API
 
@@ -189,7 +196,8 @@ HTTP/1.1 201 Created
   "id": "<uuid>",
   "registration": "F-HABC",
   "status": "active",
-  "created_at": "<utc timestamp>"
+  "created_at": "<utc timestamp>",
+  "retired_at": null
 }
 ```
 
@@ -236,6 +244,44 @@ curl -i "http://127.0.0.1:8000/api/v1/aircraft/${AIRCRAFT_ID}"
 ```
 
 The UUID above is only an example; use an ID returned by your local AeroPulse API.
+
+### Retire an aircraft
+
+#### Windows PowerShell
+
+Capture a real aircraft ID, then retire it:
+
+```powershell
+$fleet = Invoke-RestMethod `
+    -Uri "http://127.0.0.1:8000/api/v1/aircraft?limit=50&offset=0"
+
+$aircraftId = $fleet.items[0].id
+
+$retired = Invoke-RestMethod `
+    -Uri "http://127.0.0.1:8000/api/v1/aircraft/$aircraftId/retire" `
+    -Method Post
+
+$retired
+```
+
+Calling the same endpoint again is safe and returns the same `retired_at` timestamp.
+
+#### Bash / Git Bash / WSL
+
+```bash
+AIRCRAFT_ID="replace-with-a-real-aircraft-uuid"
+
+curl -i -X POST \
+  "http://127.0.0.1:8000/api/v1/aircraft/${AIRCRAFT_ID}/retire"
+```
+
+Expected:
+
+```text
+200 OK
+status = retired
+retired_at = <utc timestamp>
+```
 
 ### Quality checks
 
@@ -288,6 +334,7 @@ uv build
 - [Fleet persistence](docs/architecture/fleet-persistence.md)
 - [Fleet aircraft registration HTTP API](docs/architecture/fleet-http-api.md)
 - [Fleet aircraft read API](docs/architecture/fleet-read-api.md)
+- [Fleet aircraft lifecycle](docs/architecture/fleet-lifecycle.md)
 
 ## Foundation roadmap
 
@@ -305,7 +352,7 @@ uv build
 - [x] S1-002 — PostgreSQL aircraft persistence and Alembic
 - [x] S1-003 — Aircraft registration HTTP API
 - [x] S1-004 — Retrieve and list aircraft
-- [ ] S1-005 — Aircraft lifecycle / retirement
+- [x] S1-005 — Aircraft lifecycle / retirement
 - [ ] S1-006 — Equipment domain and persistence
 - [ ] S1-007 — Equipment HTTP API
 - [ ] S1-008 — Fleet integration and E2E validation

@@ -1,9 +1,9 @@
 """Register-aircraft application use case."""
 
 from collections.abc import Callable
-from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
+from aeropulse.fleet.application.clock import Clock, utc_now
 from aeropulse.fleet.application.commands import RegisterAircraftCommand
 from aeropulse.fleet.application.errors import AircraftRegistrationAlreadyExists
 from aeropulse.fleet.domain.aircraft import Aircraft
@@ -11,12 +11,6 @@ from aeropulse.fleet.domain.repositories import AircraftRegistrationConflict, Ai
 from aeropulse.fleet.domain.value_objects import AircraftRegistration
 
 type AircraftIdGenerator = Callable[[], UUID]
-type Clock = Callable[[], datetime]
-
-
-def utc_now() -> datetime:
-    """Return the current UTC time."""
-    return datetime.now(UTC)
 
 
 class RegisterAircraftHandler:

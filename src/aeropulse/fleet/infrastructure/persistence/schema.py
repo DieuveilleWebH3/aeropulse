@@ -16,6 +16,7 @@ from sqlalchemy.schema import conv
 
 AIRCRAFT_REGISTRATION_UNIQUE_CONSTRAINT = "uq_aircraft_registration"
 AIRCRAFT_STATUS_CHECK_CONSTRAINT = "ck_aircraft_status"
+AIRCRAFT_RETIREMENT_STATE_CHECK_CONSTRAINT = "ck_aircraft_retirement_state"
 AIRCRAFT_LIST_INDEX = "ix_aircraft_created_at_id"
 
 metadata = MetaData(
@@ -35,9 +36,16 @@ aircraft_table = Table(
     Column("registration", String(length=16), nullable=False),
     Column("status", String(length=16), nullable=False),
     Column("created_at", DateTime(timezone=True), nullable=False),
+    Column("retired_at", DateTime(timezone=True), nullable=True),
     CheckConstraint(
         "status IN ('active', 'retired')",
         name=conv(AIRCRAFT_STATUS_CHECK_CONSTRAINT),
+    ),
+    CheckConstraint(
+        "(status = 'active' AND retired_at IS NULL) "
+        "OR (status = 'retired' AND retired_at IS NOT NULL "
+        "AND retired_at >= created_at)",
+        name=conv(AIRCRAFT_RETIREMENT_STATE_CHECK_CONSTRAINT),
     ),
     UniqueConstraint(
         "registration",

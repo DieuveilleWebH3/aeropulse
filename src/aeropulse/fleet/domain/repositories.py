@@ -15,6 +15,14 @@ class AircraftRegistrationConflict(Exception):
         super().__init__(f"aircraft registration conflicts with persisted data: {registration}")
 
 
+class AircraftRetirementConflict(Exception):
+    """Raised when persistence loses the expected ACTIVE retirement precondition."""
+
+    def __init__(self, aircraft_id: UUID) -> None:
+        self.aircraft_id = aircraft_id
+        super().__init__(f"aircraft retirement state changed concurrently: {aircraft_id}")
+
+
 class AircraftRepository(Protocol):
     """Persistence contract required by aircraft-registration use cases."""
 
@@ -45,4 +53,20 @@ class AircraftReadRepository(Protocol):
 
     async def count_aircraft(self) -> int:
         """Return the total number of persisted aircraft."""
+        ...
+
+
+class AircraftLifecycleRepository(Protocol):
+    """Persistence contract required by aircraft lifecycle use cases."""
+
+    async def get_by_id(self, aircraft_id: UUID) -> Aircraft | None:
+        """Return one aircraft by stable identifier, if present."""
+        ...
+
+    async def update_retirement(self, aircraft: Aircraft) -> None:
+        """Persist one ACTIVE -> RETIRED transition conditionally.
+
+        Raises:
+            AircraftRetirementConflict: if the persisted aircraft is no longer ACTIVE.
+        """
         ...

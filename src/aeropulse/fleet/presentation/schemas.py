@@ -25,6 +25,7 @@ class AircraftResponse(BaseModel):
     registration: str
     status: AircraftStatus
     created_at: datetime
+    retired_at: datetime | None
 
     @classmethod
     def from_domain(cls, aircraft: Aircraft) -> Self:
@@ -34,6 +35,7 @@ class AircraftResponse(BaseModel):
             registration=aircraft.registration.value,
             status=aircraft.status,
             created_at=aircraft.created_at,
+            retired_at=aircraft.retired_at,
         )
 
 
