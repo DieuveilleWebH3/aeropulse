@@ -1,7 +1,7 @@
 # AeroPulse — GitHub Copilot Agent Governance
 
 **Ticket:** S0-002 — Copilot Agent Governance and Repository Instructions
-**Status:** Proposed for Sprint 0
+**Status:** Active — updated for Sprint 2 spec-driven delivery
 **Scope:** Repository-wide Copilot instructions, path-specific instructions, custom agents, reusable prompt files, issue/PR governance.
 **Out of scope:** Runtime application code, CI workflow implementation, dependency bootstrap, FastAPI implementation.
 
@@ -116,7 +116,7 @@ Prompts are task templates, not permanent rules.
 
 ## 4. Agent Set
 
-AeroPulse starts with five custom agents.
+AeroPulse uses five specialist agents plus one experimental coordination-only orchestrator.
 
 ### 4.1 Architect & Documentation Agent
 
@@ -204,6 +204,37 @@ Must not:
 - upgrade dependencies without running the project validation suite;
 - add infrastructure that has not been requested by a ticket.
 
+### 4.6 Spec Delivery Orchestrator (experimental)
+
+Primary responsibilities:
+
+- coordinate one Approved specification across the existing specialist agents;
+- enforce the architecture/ADR gate before implementation;
+- delegate implementation rather than edit code itself;
+- request independent test and security/quality review;
+- consolidate acceptance-criteria traceability and actual validation evidence.
+
+Tool boundary:
+
+```text
+read
+search
+agent
+```
+
+It deliberately has no edit or shell capability.
+
+The orchestrator is manually invoked during the Sprint 2 experiment. It is retained only if it
+reduces coordination ambiguity without creating unnecessary handoffs or duplicated work.
+
+It must not:
+
+- invent requirements or resolve ambiguous specs itself;
+- edit code/tests/docs;
+- approve/merge PRs;
+- weaken BLOCKER/HIGH findings;
+- ask multiple agents to implement the same change concurrently.
+
 ---
 
 ## 5. Why We Do Not Create More Agents Yet
@@ -230,6 +261,8 @@ A new agent is justified only when:
 1. a recurring responsibility has a stable boundary;
 2. the responsibility requires distinct instructions or tool restrictions;
 3. using the existing agent set causes repeated ambiguity.
+
+The Sprint 2 orchestrator is explicitly an experiment against these criteria; it is not assumed to become permanent.
 
 ---
 
@@ -275,6 +308,28 @@ Merge
 ```
 
 Generation is not approval.
+
+## 6.1 Spec-Driven Delivery Workflow
+
+For non-trivial feature work with an Approved specification:
+
+```text
+Issue / outcome
+    -> Approved spec
+    -> Architect / ADR gate
+    -> implementation specialist
+    -> deterministic validation
+    -> independent Test Engineer pass
+    -> Security & Quality review
+    -> traceability consolidation
+    -> human review
+```
+
+The spec defines observable behavior. ADRs define significant technical decisions. Agents must not
+silently substitute one for the other.
+
+Only implementation/review work that benefits from an isolated specialist context should be
+delegated. Agent count is not a success metric.
 
 ---
 

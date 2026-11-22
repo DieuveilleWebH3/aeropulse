@@ -1,0 +1,73 @@
+name: Spec-Driven Story
+description: Implement one approved AeroPulse feature specification
+title: "[SPEC] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template only after the linked specification has been reviewed and marked `Approved`.
+        One issue should map to one coherent specification / pull request.
+
+  - type: input
+    id: spec
+    attributes:
+      label: Approved specification
+      description: Repository path to the approved spec.
+      placeholder: docs/specs/S2-001-telemetry-sample-domain.md
+    validations:
+      required: true
+
+  - type: input
+    id: adrs
+    attributes:
+      label: Relevant ADRs
+      description: Comma-separated ADR paths or "None".
+      placeholder: docs/adr/ADR-001-spec-driven-development.md
+    validations:
+      required: true
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: User / engineering outcome
+      description: Why this feature matters. Do not restate implementation details.
+    validations:
+      required: true
+
+  - type: textarea
+    id: non-goals
+    attributes:
+      label: Non-goals
+      description: Confirm important deferred behavior from the spec.
+    validations:
+      required: true
+
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks / Security / Data Integrity
+      description: Call out the highest-value risks the implementation/review must address.
+    validations:
+      required: true
+
+  - type: textarea
+    id: validation
+    attributes:
+      label: Required validation
+      description: Deterministic commands/evidence required by the spec and repository.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: readiness
+    attributes:
+      label: Spec readiness
+      options:
+        - label: The specification status is `Approved`.
+          required: true
+        - label: Open questions in the specification are resolved.
+          required: true
+        - label: Relevant ADRs have been reviewed.
+          required: true
+        - label: The ticket is small enough for one coherent pull request.
+          required: true
