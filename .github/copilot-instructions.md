@@ -6,9 +6,10 @@ Before making a non-trivial change:
 
 1. read the ticket/user story and acceptance criteria;
 2. read `docs/architecture/repository-structure.md`;
-3. read relevant ADRs in `docs/architecture/decisions/` if they exist;
-4. inspect the affected code before proposing changes;
-5. outline **needs, plan, risks, mitigations, and validation**.
+3. read relevant ADRs in `docs/adr/` if they exist;
+4. if the ticket references a specification, read it under `docs/specs/`;
+5. inspect the affected code before proposing changes;
+6. outline **needs, plan, risks, mitigations, and validation**.
 
 Do not implement beyond the ticket scope without explicitly identifying why the extra change is required.
 
@@ -62,6 +63,28 @@ Avoid mixing:
 - architecture redesign not required by the ticket.
 
 If the existing architecture blocks the ticket, explain the conflict before widening the change.
+
+## Spec-driven delivery
+
+For a ticket linked to an approved specification:
+
+- treat the specification as the behavioral contract for that ticket;
+- do not invent requirements that are not present in the specification or an accepted ADR;
+- trace acceptance criteria to implementation and tests;
+- if the specification is ambiguous or conflicts with an ADR/current behavior, report the conflict before coding;
+- update the specification in the same change when approved behavior is intentionally changed.
+
+Use the sources of truth consistently:
+
+```text
+ADR   -> why a significant technical decision exists
+Spec  -> what observable behavior the ticket must deliver
+Code  -> implementation of the approved behavior
+Tests -> executable evidence that the behavior is satisfied
+```
+
+A specification does not override an accepted ADR silently. A code change does not redefine the
+specification merely because it is easier to implement.
 
 ## Python
 
