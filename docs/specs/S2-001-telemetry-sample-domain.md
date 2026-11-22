@@ -1,6 +1,6 @@
 # S2-001 — Telemetry Sample Domain Model
 
-- Status: Approved
+- Status: Implemented
 - Sprint: 2 — Telemetry Ingestion Foundation
 - Type: User story / domain foundation
 - Primary bounded context: Telemetry
